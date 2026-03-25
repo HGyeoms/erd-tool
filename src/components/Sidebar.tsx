@@ -106,7 +106,7 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
                     style={{ background: t.color || '#3b82f6' }}
                   />
                   <span className="truncate font-medium">{t.name}</span>
-                  <span className="ml-auto text-[10px] text-gray-600">{t.columns.length}</span>
+                  <span className="ml-auto text-[11px] text-gray-500">{t.columns.length}</span>
                 </div>
               </button>
             ))}
@@ -131,7 +131,7 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
           <div className="p-3">
             {/* Table name editor */}
             <div className="mb-3">
-              <label className="block text-[10px] text-gray-500 uppercase tracking-wider mb-1">
+              <label className="block text-[11px] text-gray-400 uppercase tracking-wider mb-1">
                 Table Name
               </label>
               <input
@@ -143,11 +143,11 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
 
             {/* Column header */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+              <span className="text-[11px] text-gray-400 uppercase tracking-wider">
                 Columns ({selectedTable.columns.length})
               </span>
               <button
-                className="text-[10px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
+                className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
                 onClick={handleAddColumn}
               >
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -238,7 +238,7 @@ function ColumnEditor({
       {/* Type dropdown */}
       <div className="mb-1.5">
         <select
-          className="w-full bg-[#1a1d27] text-gray-400 text-[10px] px-2 py-1 rounded border border-gray-700 outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+          className="w-full bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-1 rounded border border-gray-700 outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
           value={column.type}
           onChange={(e) => updateColumn(tableId, column.id, { type: e.target.value })}
         >
@@ -254,7 +254,7 @@ function ColumnEditor({
       </div>
 
       {/* Checkboxes + Default */}
-      <div className="flex items-center gap-3 text-[10px]">
+      <div className="flex items-center gap-3 text-[11px]">
         <label className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-gray-400 transition-colors">
           <input
             type="checkbox"
@@ -274,7 +274,7 @@ function ColumnEditor({
           Null
         </label>
         <input
-          className="flex-1 bg-[#1a1d27] text-gray-500 text-[10px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
+          className="flex-1 bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
           value={column.defaultValue || ''}
           onChange={(e) => updateColumn(tableId, column.id, { defaultValue: e.target.value || null })}
           placeholder="default"

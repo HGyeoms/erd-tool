@@ -173,7 +173,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName }: T
       <div className="flex-1" />
 
       {/* Table count */}
-      <span className="text-[10px] text-gray-500">
+      <span className="text-xs text-gray-400">
         {tables.length} table{tables.length !== 1 ? 's' : ''}
       </span>
     </div>

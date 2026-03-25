@@ -93,7 +93,7 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
           <div key={col.id} className="relative flex items-center gap-3 px-5 py-2.5 hover:bg-white/5 group">
             <Handle type="target" position={Position.Left} id={`${col.id}-target`} className="!w-3 !h-3 !bg-blue-500 !border-2 !border-gray-900 !-left-[7px]" />
             <span className="flex-1 text-sm text-gray-300 font-medium truncate">{col.name}</span>
-            <span className="text-[10px] font-mono text-gray-500 bg-black/20 px-1.5 py-0.5 rounded uppercase">{col.type}</span>
+            <span className="text-[11px] font-mono text-gray-400 bg-black/20 px-1.5 py-0.5 rounded uppercase">{col.type}</span>
             <Handle type="source" position={Position.Right} id={`${col.id}-source`} className="!w-3 !h-3 !bg-blue-500 !border-2 !border-gray-900 !-right-[7px]" />
           </div>
         ))}
