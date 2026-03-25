@@ -10,11 +10,11 @@ export function autoLayout(schema: Schema): Schema {
 
   const g = new dagre.graphlib.Graph();
   g.setGraph({
-    rankdir: 'TB',
-    nodesep: 60,
-    ranksep: 80,
-    marginx: 40,
-    marginy: 40,
+    rankdir: 'LR',
+    nodesep: 80,
+    ranksep: 200,
+    marginx: 60,
+    marginy: 60,
   });
   g.setDefaultEdgeLabel(() => ({}));
 

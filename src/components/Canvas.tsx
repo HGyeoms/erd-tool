@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -12,6 +12,7 @@ import {
   type NodeTypes,
   type EdgeTypes,
   ConnectionMode,
+  applyNodeChanges,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -61,10 +62,17 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
   const updateTablePosition = useSchemaStore((s) => s.updateTablePosition);
   const addRelationship = useSchemaStore((s) => s.addRelationship);
 
-  const nodes = useMemo(
+  const storeNodes = useMemo(
     () => tables.map((t) => tableToNode(t, selectedTableId)),
     [tables, selectedTableId]
   );
+
+  const [localNodes, setLocalNodes] = useState<Node[]>(storeNodes);
+
+  // Sync store → local when store changes (e.g. auto-layout, import)
+  useMemo(() => {
+    setLocalNodes(storeNodes);
+  }, [storeNodes]);
 
   const edges = useMemo(
     () => relationships.map(relationshipToEdge),
@@ -73,7 +81,11 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
+      // Apply all changes locally for smooth dragging
+      setLocalNodes((nds) => applyNodeChanges(changes, nds));
+
       for (const change of changes) {
+        // Persist to store only when drag ends
         if (change.type === 'position' && change.position && !change.dragging) {
           updateTablePosition(change.id, change.position);
         }
@@ -115,7 +127,7 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
   return (
     <div className="w-full h-full">
       <ReactFlow
-        nodes={nodes}
+        nodes={localNodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onConnect={onConnect}
@@ -129,8 +141,7 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
         proOptions={{ hideAttribution: true }}
         minZoom={0.1}
         maxZoom={3}
-        snapToGrid
-        snapGrid={[16, 16]}
+        snapToGrid={false}
       >
         <Background
           variant={BackgroundVariant.Dots}
