@@ -9,9 +9,11 @@ const TABLE_COLORS = [
 interface ToolbarProps {
   onImportDDL: () => void;
   onExportDDL: () => void;
+  onGoHome?: () => void;
+  workspaceName?: string;
 }
 
-export function Toolbar({ onImportDDL, onExportDDL }: ToolbarProps) {
+export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName }: ToolbarProps) {
   const addTable = useSchemaStore((s) => s.addTable);
   const tables = useSchemaStore((s) => s.tables);
   const store = useSchemaStore;
@@ -67,9 +69,28 @@ export function Toolbar({ onImportDDL, onExportDDL }: ToolbarProps) {
           <line x1="10" y1="3" x2="10" y2="21" />
         </svg>
         <span className="text-white text-sm font-semibold tracking-wide">ERD Designer</span>
+        {workspaceName ? (
+          <span className="hidden md:inline text-xs text-gray-500 uppercase tracking-[0.2em]">
+            / {workspaceName}
+          </span>
+        ) : null}
       </div>
 
-      <div className="w-px h-6 bg-gray-700 mx-2" />
+      {onGoHome ? (
+        <>
+          <ToolbarButton
+            icon={
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 10.5 12 3l9 7.5" />
+                <path d="M5 9.5V21h14V9.5" />
+              </svg>
+            }
+            label="Home"
+            onClick={onGoHome}
+          />
+          <div className="w-px h-6 bg-gray-700 mx-2" />
+        </>
+      ) : null}
 
       {/* Action Buttons */}
       <ToolbarButton

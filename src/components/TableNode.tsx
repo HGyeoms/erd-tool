@@ -48,97 +48,53 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
 
   return (
     <div
-      className={`min-w-[220px] rounded-lg shadow-xl transition-all duration-150 ${
+      className={`min-w-[300px] rounded-2xl shadow-2xl transition-all duration-200 border-2 ${
         selected
-          ? 'ring-2 ring-blue-400 shadow-blue-500/20'
-          : 'ring-1 ring-gray-700/50 hover:ring-gray-600'
+          ? 'border-blue-500 shadow-blue-500/20'
+          : 'border-gray-800 hover:border-gray-700'
       }`}
-      style={{ background: '#252830' }}
+      style={{ background: '#1c1f2b' }}
     >
       {/* Header */}
       <div
-        className="px-3 py-2 flex items-center gap-2"
-        style={{ borderBottom: `3px solid ${accentColor}` }}
+        className="px-5 py-4 flex items-center gap-3 bg-[#252836] rounded-t-[14px]"
+        style={{ borderBottom: `2px solid ${accentColor}` }}
         onDoubleClick={handleDoubleClick}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <line x1="3" y1="9" x2="21" y2="9" />
-          <line x1="9" y1="3" x2="9" y2="21" />
-        </svg>
-        {editing ? (
-          <input
-            className="bg-transparent text-white text-sm font-semibold outline-none border-b border-blue-400 w-full"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            autoFocus
-          />
-        ) : (
-          <span className="text-white text-sm font-semibold truncate cursor-default">
-            {table.name}
-          </span>
-        )}
-        <span className="ml-auto text-[10px] text-gray-500">{table.columns.length} cols</span>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${accentColor}15` }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0 text-white text-base font-bold truncate">
+          {editing ? (
+            <input
+              className="bg-[#13151c] text-white outline-none border border-blue-500/50 rounded px-2 py-0.5 w-full"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+              autoFocus
+            />
+          ) : (
+            table.name
+          )}
+        </div>
       </div>
 
       {/* Columns */}
-      <div className="py-1">
+      <div className="py-2 bg-[#1c1f2b] rounded-b-2xl">
         {table.columns.length === 0 && (
-          <div className="px-3 py-2 text-xs text-gray-500 italic">No columns</div>
+          <div className="px-4 py-4 text-sm text-gray-500 italic text-center opacity-60">No columns defined</div>
         )}
         {table.columns.map((col) => (
-          <div
-            key={col.id}
-            className="relative flex items-center gap-2 px-3 py-[5px] text-xs hover:bg-white/5 group"
-          >
-            <Handle
-              type="target"
-              position={Position.Left}
-              id={`${col.id}-target`}
-              className="!w-3 !h-3 !bg-blue-500/60 !border-blue-400 hover:!bg-blue-400 !-left-[6px]"
-              style={{ top: '50%' }}
-            />
-
-            {/* Icon */}
-            <span className="w-4 flex-shrink-0 text-center">
-              {col.isPrimaryKey ? (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5">
-                  <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-                </svg>
-              ) : col.isForeignKey ? (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2.5">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                </svg>
-              ) : (
-                <span className="text-gray-600">-</span>
-              )}
-            </span>
-
-            {/* Name */}
-            <span className={`${col.isPrimaryKey ? 'text-yellow-300 font-medium' : 'text-gray-300'} truncate`}>
-              {col.name}
-            </span>
-
-            {/* Type */}
-            <span className="ml-auto text-gray-500 font-mono text-[10px] flex-shrink-0">
-              {col.type}
-            </span>
-
-            {/* Nullable badge */}
-            {!col.isNullable && !col.isPrimaryKey && (
-              <span className="text-[9px] text-orange-400/70 flex-shrink-0">NN</span>
-            )}
-
-            <Handle
-              type="source"
-              position={Position.Right}
-              id={`${col.id}-source`}
-              className="!w-3 !h-3 !bg-blue-500/60 !border-blue-400 hover:!bg-blue-400 !-right-[6px]"
-              style={{ top: '50%' }}
-            />
+          <div key={col.id} className="relative flex items-center gap-3 px-5 py-2.5 hover:bg-white/5 group">
+            <Handle type="target" position={Position.Left} id={`${col.id}-target`} className="!w-3 !h-3 !bg-blue-500 !border-2 !border-gray-900 !-left-[7px]" />
+            <span className="flex-1 text-sm text-gray-300 font-medium truncate">{col.name}</span>
+            <span className="text-[10px] font-mono text-gray-500 bg-black/20 px-1.5 py-0.5 rounded uppercase">{col.type}</span>
+            <Handle type="source" position={Position.Right} id={`${col.id}-source`} className="!w-3 !h-3 !bg-blue-500 !border-2 !border-gray-900 !-right-[7px]" />
           </div>
         ))}
       </div>
