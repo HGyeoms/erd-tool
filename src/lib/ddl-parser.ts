@@ -16,16 +16,18 @@ export function parseDDL(sql: string): Schema {
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .trim();
 
-    // Extract CREATE TABLE statements
-    const createTableRegex =
-      /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:`([^`]+)`|"([^"]+)"|(\w+(?:\.\w+)?))\s*\(([\s\S]*?)\)\s*(?:ENGINE\s*=[^;]*|WITH\s*\([^)]*\))?;?/gi;
+    // Extract CREATE TABLE statements using balanced parentheses
+    const createTableHeaderRegex =
+      /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:`([^`]+)`|"([^"]+)"|(\w+(?:\.\w+)?))\s*\(/gi;
 
     let match: RegExpExecArray | null;
     let tableIndex = 0;
 
-    while ((match = createTableRegex.exec(cleaned)) !== null) {
+    while ((match = createTableHeaderRegex.exec(cleaned)) !== null) {
       const tableName = (match[1] || match[2] || match[3]).replace(/^(?:\w+\.)/, '');
-      const body = match[4];
+      const bodyStart = match.index + match[0].length;
+      const body = extractBalancedBody(cleaned, bodyStart);
+      if (!body) continue;
 
       const table: Table = {
         id: crypto.randomUUID(),
@@ -261,6 +263,22 @@ function parseColumnDef(def: string): Column | null {
     isForeignKey: isForeignKey || undefined,
     references,
   };
+}
+
+/**
+ * Extract the body of a CREATE TABLE statement using balanced parentheses.
+ * `start` is the index right after the opening '('.
+ */
+function extractBalancedBody(sql: string, start: number): string | null {
+  let depth = 1;
+  let i = start;
+  while (i < sql.length && depth > 0) {
+    if (sql[i] === '(') depth++;
+    else if (sql[i] === ')') depth--;
+    if (depth > 0) i++;
+  }
+  if (depth !== 0) return null;
+  return sql.slice(start, i);
 }
 
 /**
