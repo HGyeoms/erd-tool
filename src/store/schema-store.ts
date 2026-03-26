@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { temporal } from 'zundo';
-import type { Schema, Table, Column, Relationship, EnumType } from '../types/schema';
+import type { Schema, Table, Column, Relationship, EnumType, TableGroup } from '../types/schema';
 
 const STORAGE_KEY = 'erd-tool-schema';
 
@@ -42,12 +42,15 @@ export interface SchemaState extends Schema {
   addEnum: (enumType: EnumType) => void;
   updateEnum: (enumId: string, updates: Partial<Omit<EnumType, 'id'>>) => void;
   removeEnum: (enumId: string) => void;
+  addGroup: (group: TableGroup) => void;
+  updateGroup: (groupId: string, updates: Partial<Omit<TableGroup, 'id'>>) => void;
+  removeGroup: (groupId: string) => void;
   importSchema: (schema: Schema) => void;
   setSchema: (schema: Schema) => void;
 }
 
 function persist(state: SchemaState) {
-  saveToStorage({ tables: state.tables, relationships: state.relationships, enums: state.enums });
+  saveToStorage({ tables: state.tables, relationships: state.relationships, enums: state.enums, groups: state.groups });
 }
 
 const initialSchema = loadFromStorage();
@@ -58,6 +61,7 @@ export const useSchemaStore = create<SchemaState>()(
       tables: initialSchema.tables,
       relationships: initialSchema.relationships,
       enums: initialSchema.enums || [],
+      groups: initialSchema.groups || [],
 
       addTable: (table: Table) =>
         set((state) => {
@@ -218,6 +222,33 @@ export const useSchemaStore = create<SchemaState>()(
           return next;
         }),
 
+      addGroup: (group: TableGroup) =>
+        set((state) => {
+          const next = { groups: [...(state.groups || []), group] };
+          persist({ ...state, ...next });
+          return next;
+        }),
+
+      updateGroup: (groupId: string, updates: Partial<Omit<TableGroup, 'id'>>) =>
+        set((state) => {
+          const next = {
+            groups: (state.groups || []).map((g) =>
+              g.id === groupId ? { ...g, ...updates } : g
+            ),
+          };
+          persist({ ...state, ...next });
+          return next;
+        }),
+
+      removeGroup: (groupId: string) =>
+        set((state) => {
+          const next = {
+            groups: (state.groups || []).filter((g) => g.id !== groupId),
+          };
+          persist({ ...state, ...next });
+          return next;
+        }),
+
       importSchema: (schema: Schema) =>
         set((state) => {
           // Merge: add new tables, skip duplicates by name
@@ -229,6 +260,7 @@ export const useSchemaStore = create<SchemaState>()(
             tables: [...state.tables, ...newTables],
             relationships: [...state.relationships, ...schema.relationships],
             enums: [...(state.enums || []), ...newEnums],
+            groups: [...(state.groups || []), ...(schema.groups || [])],
           };
           persist({ ...state, ...next });
           return next;
@@ -236,7 +268,7 @@ export const useSchemaStore = create<SchemaState>()(
 
       setSchema: (schema: Schema) =>
         set((state) => {
-          const next = { tables: schema.tables, relationships: schema.relationships, enums: schema.enums || [] };
+          const next = { tables: schema.tables, relationships: schema.relationships, enums: schema.enums || [], groups: schema.groups || [] };
           persist({ ...state, ...next });
           return next;
         }),

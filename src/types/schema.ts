@@ -36,8 +36,17 @@ export interface EnumType {
   values: string[];
 }
 
+export interface TableGroup {
+  id: string;
+  name: string;
+  color: string;
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+}
+
 export interface Schema {
   tables: Table[];
   relationships: Relationship[];
   enums?: EnumType[];
+  groups?: TableGroup[];
 }

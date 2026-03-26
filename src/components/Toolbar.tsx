@@ -1,12 +1,14 @@
 import { useReactFlow } from '@xyflow/react';
 import { useSchemaStore } from '../store/schema-store';
 import { useThemeStore } from '../store/theme-store';
-import type { Table } from '../types/schema';
+import type { Table, TableGroup } from '../types/schema';
 import { autoLayout } from '../lib/auto-layout';
 
 const TABLE_COLORS = [
   '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#f97316',
 ];
+
+const GROUP_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#06b6d4'];
 
 interface ToolbarProps {
   onImportDDL: () => void;
@@ -18,7 +20,9 @@ interface ToolbarProps {
 
 export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onSearch }: ToolbarProps) {
   const addTable = useSchemaStore((s) => s.addTable);
+  const addGroup = useSchemaStore((s) => s.addGroup);
   const tables = useSchemaStore((s) => s.tables);
+  const groups = useSchemaStore((s) => s.groups) || [];
   const store = useSchemaStore;
   const { fitView } = useReactFlow();
   const theme = useThemeStore((s) => s.theme);
@@ -46,6 +50,20 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
       color,
     };
     addTable(table);
+  };
+
+  const handleAddGroup = () => {
+    const id = `group-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const color = GROUP_COLORS[groups.length % GROUP_COLORS.length];
+    const offset = groups.length * 30;
+    const group: TableGroup = {
+      id,
+      name: `Group ${groups.length + 1}`,
+      color,
+      position: { x: 50 + offset, y: 50 + offset },
+      size: { width: 400, height: 300 },
+    };
+    addGroup(group);
   };
 
   const handleUndo = () => {
@@ -108,6 +126,16 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
         }
         label="Add Table"
         onClick={handleAddTable}
+      />
+
+      <ToolbarButton
+        icon={
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="3" strokeDasharray="4 2" />
+          </svg>
+        }
+        label="Add Group"
+        onClick={handleAddGroup}
       />
 
       <div className="w-px h-6 mx-1" style={{ background: 'var(--border-light)' }} />

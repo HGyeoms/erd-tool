@@ -19,16 +19,20 @@ import '@xyflow/react/dist/style.css';
 
 import { useSchemaStore } from '../store/schema-store';
 import { TableNode } from './TableNode';
+import { GroupNode } from './GroupNode';
 import { RelationshipEdge } from './RelationshipEdge';
 import { ContextMenu, type ContextMenuItem } from './ContextMenu';
-import type { Table, Relationship } from '../types/schema';
+import type { Table, Relationship, TableGroup } from '../types/schema';
 
 const TABLE_COLORS = [
   '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#f97316',
 ];
 
+const GROUP_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#06b6d4'];
+
 const nodeTypes: NodeTypes = {
   tableNode: TableNode as any,
+  groupNode: GroupNode as any,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -42,6 +46,17 @@ function tableToNode(table: Table, selectedTableId: string | null): Node {
     position: table.position,
     data: { ...table, selected: table.id === selectedTableId },
     selected: table.id === selectedTableId,
+  };
+}
+
+function groupToNode(group: TableGroup): Node {
+  return {
+    id: group.id,
+    type: 'groupNode',
+    position: group.position,
+    data: { ...group },
+    style: { width: group.size.width, height: group.size.height },
+    zIndex: -1,
   };
 }
 
@@ -67,7 +82,11 @@ interface CanvasProps {
 export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
   const tables = useSchemaStore((s) => s.tables);
   const relationships = useSchemaStore((s) => s.relationships);
+  const groups = useSchemaStore((s) => s.groups) || [];
   const updateTablePosition = useSchemaStore((s) => s.updateTablePosition);
+  const updateGroup = useSchemaStore((s) => s.updateGroup);
+  const addGroup = useSchemaStore((s) => s.addGroup);
+  const removeGroup = useSchemaStore((s) => s.removeGroup);
   const addRelationship = useSchemaStore((s) => s.addRelationship);
   const addTable = useSchemaStore((s) => s.addTable);
   const removeTable = useSchemaStore((s) => s.removeTable);
@@ -92,8 +111,11 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
   }, []);
 
   const storeNodes = useMemo(
-    () => tables.map((t) => tableToNode(t, selectedTableId)),
-    [tables, selectedTableId]
+    () => [
+      ...groups.map(groupToNode),
+      ...tables.map((t) => tableToNode(t, selectedTableId)),
+    ],
+    [tables, groups, selectedTableId]
   );
 
   const [localNodes, setLocalNodes] = useState<Node[]>(storeNodes);
@@ -116,14 +138,20 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
       for (const change of changes) {
         // Persist to store only when drag ends
         if (change.type === 'position' && change.position && !change.dragging) {
-          updateTablePosition(change.id, change.position);
+          if (change.id.startsWith('group-')) {
+            updateGroup(change.id, { position: change.position });
+          } else {
+            updateTablePosition(change.id, change.position);
+          }
         }
         if (change.type === 'select' && change.selected) {
-          onSelectTable(change.id);
+          if (!change.id.startsWith('group-')) {
+            onSelectTable(change.id);
+          }
         }
       }
     },
-    [updateTablePosition, onSelectTable]
+    [updateTablePosition, updateGroup, onSelectTable]
   );
 
   const onConnect: OnConnect = useCallback(
@@ -157,6 +185,34 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
   const onNodeContextMenu = useCallback(
     (e: React.MouseEvent, node: Node) => {
       e.preventDefault();
+
+      // Group node context menu
+      if (node.id.startsWith('group-')) {
+        const group = groups.find((g) => g.id === node.id);
+        if (!group) return;
+        const items: ContextMenuItem[] = [
+          {
+            label: 'Change Color',
+            icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" /></svg>,
+            onClick: () => {
+              const currentIdx = GROUP_COLORS.indexOf(group.color);
+              const nextColor = GROUP_COLORS[(currentIdx + 1) % GROUP_COLORS.length];
+              updateGroup(group.id, { color: nextColor });
+            },
+          },
+          {
+            label: 'Delete Group',
+            icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
+            onClick: () => removeGroup(group.id),
+            danger: true,
+            divider: true,
+          },
+        ];
+        setContextMenu({ x: e.clientX, y: e.clientY, items });
+        return;
+      }
+
+      // Table node context menu
       const table = tables.find((t) => t.id === node.id);
       if (!table) return;
 
@@ -201,7 +257,7 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
       ];
       setContextMenu({ x: e.clientX, y: e.clientY, items });
     },
-    [tables, addTable, removeTable, onSelectTable]
+    [tables, groups, addTable, removeTable, removeGroup, updateGroup, onSelectTable]
   );
 
   const onPaneContextMenu = useCallback(
