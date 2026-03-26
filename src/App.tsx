@@ -8,6 +8,7 @@ import { SearchBar } from './components/SearchBar';
 import { ShortcutsPanel } from './components/ShortcutsPanel';
 import { Home } from './components/Home';
 import { VersionPanel } from './components/VersionPanel';
+import { AIPanel } from './components/AIPanel';
 import { useSchemaStore } from './store/schema-store';
 import { useWorkspaceStore } from './store/workspace-store';
 import { useVersionStore } from './store/version-store';
@@ -21,6 +22,7 @@ function App() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [shareToast, setShareToast] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
+  const [showAI, setShowAI] = useState(false);
   const autoSave = useVersionStore((s) => s.autoSave);
   const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
   const workspaces = useWorkspaceStore((s) => s.workspaces);
@@ -193,6 +195,7 @@ function App() {
           onSearch={() => setShowSearch((v) => !v)}
           onShare={handleShare}
           onVersions={() => setShowVersions(true)}
+          onAI={() => setShowAI((v) => !v)}
         />
 
         {/* Main Content */}
@@ -232,6 +235,9 @@ function App() {
         {showShortcuts && (
           <ShortcutsPanel onClose={() => setShowShortcuts(false)} />
         )}
+
+        {/* AI Panel */}
+        {showAI && <AIPanel onClose={() => setShowAI(false)} />}
 
         {/* Version Panel */}
         {showVersions && currentWorkspaceId && (

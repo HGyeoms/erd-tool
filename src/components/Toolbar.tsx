@@ -18,9 +18,10 @@ interface ToolbarProps {
   onSearch?: () => void;
   onShare?: () => void;
   onVersions?: () => void;
+  onAI?: () => void;
 }
 
-export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onSearch, onShare, onVersions }: ToolbarProps) {
+export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onSearch, onShare, onVersions, onAI }: ToolbarProps) {
   const addTable = useSchemaStore((s) => s.addTable);
   const addGroup = useSchemaStore((s) => s.addGroup);
   const tables = useSchemaStore((s) => s.tables);
@@ -259,6 +260,19 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
               }
               label="Versions"
               onClick={onVersions}
+            />
+          )}
+          {onAI && (
+            <ToolbarButton
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93L12 22" />
+                  <path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.58 3.25 3.93" />
+                  <circle cx="12" cy="14" r="1" fill="currentColor" />
+                </svg>
+              }
+              label="AI Assistant"
+              onClick={onAI}
             />
           )}
         </>
