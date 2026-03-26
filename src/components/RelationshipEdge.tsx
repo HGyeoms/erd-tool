@@ -8,6 +8,43 @@ import { useSchemaStore } from '../store/schema-store';
 
 const REL_TYPES: Array<'1:1' | '1:N' | 'N:M'> = ['1:1', '1:N', 'N:M'];
 
+/**
+ * Crow's Foot notation markers:
+ * - "one" side: a single vertical line (|)
+ * - "many" side: three-pronged fork (crow's foot) --|<
+ * - "one-and-only-one": double vertical line (||)
+ */
+
+/** Draw a "one" marker: single vertical bar */
+function OneMarker({ x, y, angle, color, width }: { x: number; y: number; angle: number; color: string; width: number }) {
+  return (
+    <g transform={`translate(${x}, ${y}) rotate(${angle})`}>
+      <line x1={8} y1={-7} x2={8} y2={7} stroke={color} strokeWidth={width} strokeLinecap="round" />
+    </g>
+  );
+}
+
+/** Draw a "one-and-only-one" marker: double vertical bar */
+function ExactlyOneMarker({ x, y, angle, color, width }: { x: number; y: number; angle: number; color: string; width: number }) {
+  return (
+    <g transform={`translate(${x}, ${y}) rotate(${angle})`}>
+      <line x1={6} y1={-7} x2={6} y2={7} stroke={color} strokeWidth={width} strokeLinecap="round" />
+      <line x1={12} y1={-7} x2={12} y2={7} stroke={color} strokeWidth={width} strokeLinecap="round" />
+    </g>
+  );
+}
+
+/** Draw a "many" marker: crow's foot (fork) */
+function ManyMarker({ x, y, angle, color, width }: { x: number; y: number; angle: number; color: string; width: number }) {
+  return (
+    <g transform={`translate(${x}, ${y}) rotate(${angle})`}>
+      <line x1={0} y1={-8} x2={14} y2={0} stroke={color} strokeWidth={width} strokeLinecap="round" />
+      <line x1={0} y1={8} x2={14} y2={0} stroke={color} strokeWidth={width} strokeLinecap="round" />
+      <line x1={0} y1={0} x2={14} y2={0} stroke={color} strokeWidth={width} strokeLinecap="round" />
+    </g>
+  );
+}
+
 function RelationshipEdgeComponent({
   id,
   sourceX,
@@ -35,13 +72,11 @@ function RelationshipEdgeComponent({
   const strokeColor = selected ? '#3b82f6' : hovered ? '#60a5fa' : '#4b5563';
   const strokeWidth = selected || hovered ? 2.5 : 1.5;
 
-  const markerSize = 12;
-
   const dx = targetX - sourceX;
   const dy = targetY - sourceY;
-  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  const sourceAngle = Math.atan2(dy, dx) * (180 / Math.PI) + 180;
+  const targetAngle = Math.atan2(dy, dx) * (180 / Math.PI);
 
-  // Click label to cycle relationship type: 1:1 → 1:N → N:M → 1:1
   const handleLabelClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -51,6 +86,30 @@ function RelationshipEdgeComponent({
     },
     [id, relType, updateRelationship]
   );
+
+  // Determine source and target markers based on relationship type
+  // 1:1 → source: exactly-one, target: exactly-one
+  // 1:N → source: exactly-one, target: many
+  // N:M → source: many, target: many
+  const renderSourceMarker = () => {
+    switch (relType) {
+      case '1:1':
+      case '1:N':
+        return <ExactlyOneMarker x={sourceX} y={sourceY} angle={sourceAngle} color={strokeColor} width={strokeWidth} />;
+      case 'N:M':
+        return <ManyMarker x={sourceX} y={sourceY} angle={sourceAngle} color={strokeColor} width={strokeWidth} />;
+    }
+  };
+
+  const renderTargetMarker = () => {
+    switch (relType) {
+      case '1:1':
+        return <ExactlyOneMarker x={targetX} y={targetY} angle={targetAngle} color={strokeColor} width={strokeWidth} />;
+      case '1:N':
+      case 'N:M':
+        return <ManyMarker x={targetX} y={targetY} angle={targetAngle} color={strokeColor} width={strokeWidth} />;
+    }
+  };
 
   return (
     <g
@@ -78,35 +137,9 @@ function RelationshipEdgeComponent({
         }}
       />
 
-      {/* Source marker */}
-      {(relType === 'N:M') && (
-        <g transform={`translate(${sourceX}, ${sourceY}) rotate(${angle + 180})`}>
-          <line x1="0" y1="-6" x2={markerSize} y2="0" stroke={strokeColor} strokeWidth={strokeWidth} />
-          <line x1="0" y1="6" x2={markerSize} y2="0" stroke={strokeColor} strokeWidth={strokeWidth} />
-          <line x1="0" y1="-6" x2="0" y2="6" stroke={strokeColor} strokeWidth={strokeWidth} />
-        </g>
-      )}
-
-      {(relType === '1:1' || relType === '1:N') && (
-        <g transform={`translate(${sourceX}, ${sourceY}) rotate(${angle + 180})`}>
-          <line x1={6} y1="-5" x2={6} y2="5" stroke={strokeColor} strokeWidth={strokeWidth} />
-        </g>
-      )}
-
-      {/* Target marker */}
-      {(relType === '1:N' || relType === 'N:M') && (
-        <g transform={`translate(${targetX}, ${targetY}) rotate(${angle})`}>
-          <line x1="0" y1="-6" x2={markerSize} y2="0" stroke={strokeColor} strokeWidth={strokeWidth} />
-          <line x1="0" y1="6" x2={markerSize} y2="0" stroke={strokeColor} strokeWidth={strokeWidth} />
-          <line x1="0" y1="-6" x2="0" y2="6" stroke={strokeColor} strokeWidth={strokeWidth} />
-        </g>
-      )}
-
-      {(relType === '1:1') && (
-        <g transform={`translate(${targetX}, ${targetY}) rotate(${angle})`}>
-          <line x1={6} y1="-5" x2={6} y2="5" stroke={strokeColor} strokeWidth={strokeWidth} />
-        </g>
-      )}
+      {/* Crow's Foot markers */}
+      {renderSourceMarker()}
+      {renderTargetMarker()}
 
       {/* Relationship type label — click to cycle */}
       <g
@@ -135,7 +168,6 @@ function RelationshipEdgeComponent({
         >
           {relType}
         </text>
-        {/* Click hint on hover */}
         {hovered && (
           <text
             textAnchor="middle"
