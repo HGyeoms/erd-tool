@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { Toolbar } from './components/Toolbar';
 import { DDLModal } from './components/DDLModal';
 import { SearchBar } from './components/SearchBar';
+import { ShortcutsPanel } from './components/ShortcutsPanel';
 import { Home } from './components/Home';
 import { useSchemaStore } from './store/schema-store';
 import { useWorkspaceStore } from './store/workspace-store';
@@ -13,6 +14,7 @@ function App() {
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [modalMode, setModalMode] = useState<'import' | 'export' | null>(null);
   const [showSearch, setShowSearch] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const openWorkspace = useWorkspaceStore((s) => s.openWorkspace);
@@ -110,12 +112,18 @@ function App() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cmd+F / Ctrl+F to open search
+  // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
       if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
         e.preventDefault();
         setShowSearch((v) => !v);
+      }
+      if (e.key === '?' && !isInput) {
+        setShowShortcuts((v) => !v);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -169,6 +177,11 @@ function App() {
             mode={modalMode}
             onClose={() => setModalMode(null)}
           />
+        )}
+
+        {/* Shortcuts Panel */}
+        {showShortcuts && (
+          <ShortcutsPanel onClose={() => setShowShortcuts(false)} />
         )}
       </div>
     </ReactFlowProvider>
