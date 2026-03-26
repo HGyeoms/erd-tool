@@ -293,7 +293,9 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
         panOnDrag={isHandMode ? [0, 1, 2] : [1, 2]}
         selectionOnDrag={!isHandMode}
         selectionMode={SelectionMode.Partial}
+        multiSelectionKeyCode={['Shift', 'Meta']}
         nodesDraggable={!isHandMode}
+        selectNodesOnDrag={!isHandMode}
       >
         <Background
           variant={BackgroundVariant.Dots}
