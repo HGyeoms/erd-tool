@@ -9,6 +9,7 @@ export interface Column {
   isIndexed?: boolean;
   isForeignKey?: boolean;
   references?: { table: string; column: string };
+  comment?: string;
 }
 
 export interface Table {
@@ -17,6 +18,7 @@ export interface Table {
   columns: Column[];
   position: { x: number; y: number };
   color?: string;
+  comment?: string;
 }
 
 export interface Relationship {

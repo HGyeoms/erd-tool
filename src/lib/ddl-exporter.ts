@@ -10,11 +10,22 @@ export function exportDDL(schema: Schema, dialect: Dialect): string {
 
   for (const table of schema.tables) {
     statements.push(generateCreateTable(table, schema, dialect));
-    // Generate CREATE INDEX for indexed columns
     const quote = dialect === 'mysql' ? quoteMySQL : quotePostgres;
+    // Generate CREATE INDEX for indexed columns
     for (const col of table.columns) {
       if (col.isIndexed) {
         statements.push(`CREATE INDEX ${quote(`idx_${table.name}_${col.name}`)} ON ${quote(table.name)} (${quote(col.name)});`);
+      }
+    }
+    // Generate COMMENT statements (PostgreSQL)
+    if (dialect === 'postgresql') {
+      if (table.comment) {
+        statements.push(`COMMENT ON TABLE ${quote(table.name)} IS '${table.comment.replace(/'/g, "''")}';`);
+      }
+      for (const col of table.columns) {
+        if (col.comment) {
+          statements.push(`COMMENT ON COLUMN ${quote(table.name)}.${quote(col.name)} IS '${col.comment.replace(/'/g, "''")}';`);
+        }
       }
     }
   }

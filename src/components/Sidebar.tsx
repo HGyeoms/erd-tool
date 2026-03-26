@@ -197,6 +197,19 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
               />
             </div>
 
+            {/* Table comment */}
+            <div className="mb-3">
+              <label className="block text-[11px] text-gray-400 uppercase tracking-wider mb-1">
+                Comment
+              </label>
+              <textarea
+                className="w-full bg-[#252830] text-gray-300 text-xs px-3 py-1.5 rounded-md border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none transition-all resize-none min-h-[48px]"
+                value={selectedTable.comment || ''}
+                onChange={(e) => updateTable(selectedTable.id, { comment: e.target.value || undefined })}
+                placeholder="Table description..."
+              />
+            </div>
+
             {/* Table color picker */}
             <div className="mb-3">
               <label className="block text-[11px] text-gray-400 uppercase tracking-wider mb-1.5">
@@ -410,13 +423,19 @@ function ColumnEditor({
           IDX
         </label>
       </div>
-      {/* Default */}
-      <div>
+      {/* Default + Comment */}
+      <div className="flex gap-1.5">
         <input
-          className="w-full bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
+          className="flex-1 bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
           value={column.defaultValue || ''}
           onChange={(e) => updateColumn(tableId, column.id, { defaultValue: e.target.value || null })}
           placeholder="default"
+        />
+        <input
+          className="flex-1 bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
+          value={column.comment || ''}
+          onChange={(e) => updateColumn(tableId, column.id, { comment: e.target.value || undefined })}
+          placeholder="comment"
         />
       </div>
     </div>
