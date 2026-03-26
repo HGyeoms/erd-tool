@@ -63,6 +63,7 @@ function App() {
   const handleOpenWorkspace = useCallback(
     (id: string) => {
       openWorkspace(id);
+      window.history.pushState({ workspaceId: id }, '', `#workspace/${id}`);
     },
     [openWorkspace]
   );
@@ -71,7 +72,41 @@ function App() {
     closeWorkspace();
     setSelectedTableId(null);
     setModalMode(null);
+    window.history.pushState(null, '', window.location.pathname);
   }, [closeWorkspace]);
+
+  // Handle browser back/forward
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      const workspaceId = e.state?.workspaceId;
+      if (workspaceId) {
+        const exists = useWorkspaceStore.getState().workspaces.some((w) => w.id === workspaceId);
+        if (exists) {
+          openWorkspace(workspaceId);
+          return;
+        }
+      }
+      closeWorkspace();
+      setSelectedTableId(null);
+      setModalMode(null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [openWorkspace, closeWorkspace]);
+
+  // Restore workspace from URL hash on initial load
+  useEffect(() => {
+    const hash = window.location.hash;
+    const match = hash.match(/^#workspace\/(.+)$/);
+    if (match) {
+      const id = match[1];
+      const exists = useWorkspaceStore.getState().workspaces.some((w) => w.id === id);
+      if (exists) {
+        openWorkspace(id);
+      }
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!currentWorkspace) {
     return <Home onOpenWorkspace={handleOpenWorkspace} />;
