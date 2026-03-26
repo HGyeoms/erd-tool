@@ -78,15 +78,16 @@ export function SearchBar({ onSelectTable, onClose }: SearchBarProps) {
 
   return (
     <div className="absolute top-12 left-0 right-0 z-50 flex justify-center px-4 pt-2">
-      <div className="w-full max-w-md rounded-xl border border-gray-700 bg-[#1a1d27] shadow-2xl overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-800">
+      <div className="w-full max-w-md rounded-xl border shadow-2xl overflow-hidden" style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+        <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             ref={inputRef}
-            className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-gray-600"
+            className="flex-1 bg-transparent text-sm outline-none"
+            style={{ color: 'var(--text-primary)' }}
             placeholder="Search tables and columns..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}

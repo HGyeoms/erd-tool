@@ -1,5 +1,6 @@
 import { useReactFlow } from '@xyflow/react';
 import { useSchemaStore } from '../store/schema-store';
+import { useThemeStore } from '../store/theme-store';
 import type { Table } from '../types/schema';
 import { autoLayout } from '../lib/auto-layout';
 
@@ -20,6 +21,8 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
   const tables = useSchemaStore((s) => s.tables);
   const store = useSchemaStore;
   const { fitView } = useReactFlow();
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   const handleAddTable = () => {
     const id = `table-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -63,7 +66,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
   };
 
   return (
-    <div className="h-12 bg-[#1a1d27] border-b border-gray-800 flex items-center px-4 gap-1">
+    <div className="h-12 border-b flex items-center px-4 gap-1" style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
       {/* Logo / Title */}
       <div className="flex items-center gap-2 mr-4">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
@@ -71,7 +74,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
           <line x1="2" y1="9" x2="22" y2="9" />
           <line x1="10" y1="3" x2="10" y2="21" />
         </svg>
-        <span className="text-white text-sm font-semibold tracking-wide">ERD Designer</span>
+        <span className="text-sm font-semibold tracking-wide" style={{ color: 'var(--text-primary)' }}>ERD Designer</span>
         {workspaceName ? (
           <span className="hidden md:inline text-xs text-gray-500 uppercase tracking-[0.2em]">
             / {workspaceName}
@@ -91,7 +94,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
             label="Home"
             onClick={onGoHome}
           />
-          <div className="w-px h-6 bg-gray-700 mx-2" />
+          <div className="w-px h-6 mx-2" style={{ background: 'var(--border)' }} />
         </>
       ) : null}
 
@@ -107,7 +110,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
         onClick={handleAddTable}
       />
 
-      <div className="w-px h-6 bg-gray-700/50 mx-1" />
+      <div className="w-px h-6 mx-1" style={{ background: 'var(--border-light)' }} />
 
       <ToolbarButton
         icon={
@@ -133,7 +136,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
         onClick={onExportDDL}
       />
 
-      <div className="w-px h-6 bg-gray-700/50 mx-1" />
+      <div className="w-px h-6 mx-1" style={{ background: 'var(--border-light)' }} />
 
       <ToolbarButton
         icon={
@@ -158,7 +161,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
         onClick={() => fitView({ padding: 0.2, duration: 400 })}
       />
 
-      <div className="w-px h-6 bg-gray-700/50 mx-1" />
+      <div className="w-px h-6 mx-1" style={{ background: 'var(--border-light)' }} />
 
       <ToolbarButton
         icon={
@@ -184,7 +187,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
 
       {onSearch && (
         <>
-          <div className="w-px h-6 bg-gray-700/50 mx-1" />
+          <div className="w-px h-6 mx-1" style={{ background: 'var(--border-light)' }} />
           <ToolbarButton
             icon={
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -198,11 +201,37 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
         </>
       )}
 
+      <div className="w-px h-6 mx-1" style={{ background: 'var(--border-light)' }} />
+
+      <ToolbarButton
+        icon={
+          theme === 'dark' ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="5" />
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+          )
+        }
+        label={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+        onClick={toggleTheme}
+      />
+
       {/* Spacer */}
       <div className="flex-1" />
 
       {/* Table count */}
-      <span className="text-xs text-gray-400">
+      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
         {tables.length} table{tables.length !== 1 ? 's' : ''}
       </span>
     </div>
@@ -220,12 +249,15 @@ function ToolbarButton({
 }) {
   return (
     <button
-      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-gray-400 hover:text-white hover:bg-white/5 transition-all text-xs group relative"
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-all text-xs group relative"
+      style={{ color: 'var(--text-secondary)' }}
       onClick={onClick}
+      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-hover)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'transparent'; }}
     >
       {icon}
       <span className="hidden sm:inline">{label}</span>
-      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-gray-300 text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-gray-700 sm:hidden">
+      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
         {label}
       </span>
     </button>

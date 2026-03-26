@@ -245,19 +245,16 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
           size={1}
           color="#2a2d37"
         />
-        <Controls
-          className="!bg-[#1a1d27] !border-gray-700 !shadow-xl [&>button]:!bg-[#252830] [&>button]:!border-gray-700 [&>button]:!text-gray-400 [&>button:hover]:!bg-[#2f323d]"
-        />
+        <Controls />
         <MiniMap
           nodeColor={() => '#3b82f6'}
           maskColor="rgba(15, 17, 23, 0.85)"
-          className="!bg-[#1a1d27] !border-gray-700"
           style={{ height: 100, width: 150 }}
         />
       </ReactFlow>
 
       {/* Mode indicator */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-lg bg-[#1a1d27]/90 border border-gray-700 px-1.5 py-1 backdrop-blur-sm shadow-lg">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-lg border px-1.5 py-1 backdrop-blur-sm shadow-lg" style={{ background: 'color-mix(in srgb, var(--bg-secondary) 90%, transparent)', borderColor: 'var(--border)' }}>
         <button
           className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-all ${
             mode === 'select'

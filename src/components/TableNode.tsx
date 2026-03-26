@@ -51,14 +51,14 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
       className={`min-w-[300px] rounded-2xl shadow-2xl transition-all duration-200 border-2 ${
         selected
           ? 'border-blue-500 shadow-blue-500/20'
-          : 'border-gray-800 hover:border-gray-700'
+          : ''
       }`}
-      style={{ background: '#1c1f2b' }}
+      style={{ background: 'var(--bg-secondary)', borderColor: selected ? undefined : 'var(--border)' }}
     >
       {/* Header */}
       <div
-        className="px-5 py-4 flex items-center gap-3 bg-[#252836] rounded-t-[14px]"
-        style={{ borderBottom: `2px solid ${accentColor}` }}
+        className="px-5 py-4 flex items-center gap-3 rounded-t-[14px]"
+        style={{ background: 'var(--bg-tertiary)', borderBottom: `2px solid ${accentColor}` }}
         onDoubleClick={handleDoubleClick}
       >
         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${accentColor}15` }}>
@@ -68,10 +68,11 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
             <line x1="9" y1="3" x2="9" y2="21" />
           </svg>
         </div>
-        <div className="flex-1 min-w-0 text-white text-base font-bold truncate">
+        <div className="flex-1 min-w-0 text-base font-bold truncate" style={{ color: 'var(--text-primary)' }}>
           {editing ? (
             <input
-              className="bg-[#13151c] text-white outline-none border border-blue-500/50 rounded px-2 py-0.5 w-full"
+              className="outline-none border border-blue-500/50 rounded px-2 py-0.5 w-full"
+              style={{ background: 'var(--input-bg)', color: 'var(--text-primary)' }}
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               onBlur={handleBlur}
@@ -85,28 +86,28 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
       </div>
 
       {/* Columns */}
-      <div className="py-2 bg-[#1c1f2b] rounded-b-2xl">
+      <div className="py-2 rounded-b-2xl" style={{ background: 'var(--bg-secondary)' }}>
         {table.columns.length === 0 && (
-          <div className="px-4 py-4 text-sm text-gray-500 italic text-center opacity-60">No columns defined</div>
+          <div className="px-4 py-4 text-sm italic text-center opacity-60" style={{ color: 'var(--text-muted)' }}>No columns defined</div>
         )}
         {table.columns.map((col) => (
-          <div key={col.id} className="relative flex items-center gap-2 px-5 py-2.5 hover:bg-white/5 group">
-            <Handle type="target" position={Position.Left} id={`${col.id}-target`} className="!w-3 !h-3 !bg-blue-500 !border-2 !border-gray-900 !-left-[7px]" />
+          <div key={col.id} className="relative flex items-center gap-2 px-5 py-2.5 group" style={{ ['--tw-bg-opacity' as string]: 0 }}>
+            <Handle type="target" position={Position.Left} id={`${col.id}-target`} className="!w-3 !h-3 !bg-blue-500 !border-2 !-left-[7px]" style={{ borderColor: 'var(--bg-secondary)' }} />
             {col.isPrimaryKey && (
               <span className="text-[9px] font-bold text-yellow-400 bg-yellow-400/10 px-1 py-0.5 rounded">PK</span>
             )}
             {col.isForeignKey && (
               <span className="text-[9px] font-bold text-cyan-400 bg-cyan-400/10 px-1 py-0.5 rounded">FK</span>
             )}
-            <span className="flex-1 text-sm text-gray-300 font-medium truncate">{col.name}</span>
+            <span className="flex-1 text-sm font-medium truncate" style={{ color: 'var(--text-secondary)' }}>{col.name}</span>
             {col.isUnique && (
               <span className="text-[9px] font-bold text-purple-400 bg-purple-400/10 px-1 py-0.5 rounded">UQ</span>
             )}
             {col.isIndexed && (
               <span className="text-[9px] font-bold text-green-400 bg-green-400/10 px-1 py-0.5 rounded">IDX</span>
             )}
-            <span className="text-[11px] font-mono text-gray-400 bg-black/20 px-1.5 py-0.5 rounded uppercase">{col.type}</span>
-            <Handle type="source" position={Position.Right} id={`${col.id}-source`} className="!w-3 !h-3 !bg-blue-500 !border-2 !border-gray-900 !-right-[7px]" />
+            <span className="text-[11px] font-mono px-1.5 py-0.5 rounded uppercase" style={{ color: 'var(--text-muted)', background: 'var(--bg-hover)' }}>{col.type}</span>
+            <Handle type="source" position={Position.Right} id={`${col.id}-source`} className="!w-3 !h-3 !bg-blue-500 !border-2 !-right-[7px]" style={{ borderColor: 'var(--bg-secondary)' }} />
           </div>
         ))}
       </div>

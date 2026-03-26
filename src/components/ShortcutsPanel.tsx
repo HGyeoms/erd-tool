@@ -38,12 +38,13 @@ export function ShortcutsPanel({ onClose }: ShortcutsPanelProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm"
+      style={{ background: 'var(--bg-modal)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-md rounded-2xl border border-gray-700/50 bg-[#1a1d27] shadow-2xl animate-in">
+      <div className="w-full max-w-md rounded-2xl border shadow-2xl animate-in" style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}>
         <div className="flex items-center justify-between px-6 pt-6 pb-4">
-          <h2 className="text-base font-bold text-white">Keyboard Shortcuts</h2>
+          <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Keyboard Shortcuts</h2>
           <button
             className="rounded-lg p-1.5 text-gray-600 transition-all hover:bg-gray-800 hover:text-white"
             onClick={onClose}
@@ -68,7 +69,7 @@ export function ShortcutsPanel({ onClose }: ShortcutsPanelProps) {
                       {item.keys.map((key, i) => (
                         <span key={i}>
                           {i > 0 && <span className="text-gray-600 text-[10px] mx-0.5">+</span>}
-                          <kbd className="inline-block min-w-[24px] text-center text-[10px] font-medium text-gray-300 bg-[#252830] border border-gray-700 rounded px-1.5 py-0.5">
+                          <kbd className="inline-block min-w-[24px] text-center text-[10px] font-medium border rounded px-1.5 py-0.5" style={{ color: 'var(--text-secondary)', background: 'var(--bg-tertiary)', borderColor: 'var(--border)' }}>
                             {key}
                           </kbd>
                         </span>

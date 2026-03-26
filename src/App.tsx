@@ -9,6 +9,7 @@ import { ShortcutsPanel } from './components/ShortcutsPanel';
 import { Home } from './components/Home';
 import { useSchemaStore } from './store/schema-store';
 import { useWorkspaceStore } from './store/workspace-store';
+import './store/theme-store'; // ensure theme is applied on load
 
 function App() {
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -136,7 +137,7 @@ function App() {
 
   return (
     <ReactFlowProvider>
-      <div className="w-full h-full flex flex-col" style={{ background: '#0f1117' }}>
+      <div className="w-full h-full flex flex-col" style={{ background: 'var(--bg-primary)' }}>
         {/* Toolbar */}
         <Toolbar
           onGoHome={handleGoHome}

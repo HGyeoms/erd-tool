@@ -109,10 +109,10 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
   };
 
   return (
-    <div className="h-full bg-[#1a1d27] border-r border-gray-800 flex flex-col overflow-hidden relative" style={{ width: sidebarWidth }}>
+    <div className="h-full border-r flex flex-col overflow-hidden relative" style={{ width: sidebarWidth, background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-800">
-        <h2 className="text-white text-sm font-semibold tracking-wide flex items-center gap-2">
+      <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+        <h2 className="text-sm font-semibold tracking-wide flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
             <rect x="3" y="3" width="7" height="7" rx="1" />
             <rect x="14" y="3" width="7" height="7" rx="1" />
@@ -126,7 +126,8 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
       {/* Table List */}
       <div className="flex-shrink-0">
         <button
-          className="w-full px-4 py-2 flex items-center justify-between text-xs text-gray-400 hover:text-gray-300 transition-colors"
+          className="w-full px-4 py-2 flex items-center justify-between text-xs transition-colors"
+          style={{ color: 'var(--text-secondary)' }}
           onClick={() => setTableListCollapsed(!tableListCollapsed)}
         >
           <span className="uppercase tracking-wider font-medium">
@@ -230,7 +231,7 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
       </div>
 
       {/* Divider */}
-      <div className="border-t border-gray-800" />
+      <div className="border-t" style={{ borderColor: 'var(--border)' }} />
 
       {/* Column Editor */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -246,11 +247,12 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
           <div className="p-3">
             {/* Table name editor */}
             <div className="mb-3">
-              <label className="block text-[11px] text-gray-400 uppercase tracking-wider mb-1">
+              <label className="block text-[11px] uppercase tracking-wider mb-1" style={{ color: 'var(--text-secondary)' }}>
                 Table Name
               </label>
               <input
-                className="w-full bg-[#252830] text-white text-xs px-3 py-1.5 rounded-md border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none transition-all"
+                className="w-full text-xs px-3 py-1.5 rounded-md border focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none transition-all"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
                 value={selectedTable.name}
                 onChange={(e) => updateTable(selectedTable.id, { name: e.target.value })}
               />
@@ -258,11 +260,12 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
 
             {/* Table comment */}
             <div className="mb-3">
-              <label className="block text-[11px] text-gray-400 uppercase tracking-wider mb-1">
+              <label className="block text-[11px] uppercase tracking-wider mb-1" style={{ color: 'var(--text-secondary)' }}>
                 Comment
               </label>
               <textarea
-                className="w-full bg-[#252830] text-gray-300 text-xs px-3 py-1.5 rounded-md border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none transition-all resize-none min-h-[48px]"
+                className="w-full text-xs px-3 py-1.5 rounded-md border focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none transition-all resize-none min-h-[48px]"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}
                 value={selectedTable.comment || ''}
                 onChange={(e) => updateTable(selectedTable.id, { comment: e.target.value || undefined })}
                 placeholder="Table description..."
@@ -271,7 +274,7 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
 
             {/* Table color picker */}
             <div className="mb-3">
-              <label className="block text-[11px] text-gray-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-[11px] uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                 Color
               </label>
               <div className="flex items-center gap-1.5">
@@ -292,7 +295,7 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
 
             {/* Column header */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-gray-400 uppercase tracking-wider">
+              <span className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
                 Columns ({selectedTable.columns.length})
               </span>
               <button
@@ -341,7 +344,7 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
             )}
 
             {/* Delete table */}
-            <div className="mt-4 pt-3 border-t border-gray-800">
+            <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
               <button
                 className="w-full text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 py-2 rounded-md transition-all flex items-center justify-center gap-1.5"
                 onClick={handleDeleteTable}
@@ -395,9 +398,10 @@ function ColumnEditor({
 }) {
   return (
     <div
-      className={`bg-[#252830] rounded-md p-2.5 border transition-all group ${
-        isDragOver ? 'border-blue-500/60 bg-blue-500/5' : isDragging ? 'opacity-40 border-gray-700/50' : 'border-gray-700/50 hover:border-gray-600/50'
+      className={`rounded-md p-2.5 border transition-all group ${
+        isDragOver ? 'border-blue-500/60' : isDragging ? 'opacity-40' : ''
       }`}
+      style={{ background: isDragOver ? 'rgba(59,130,246,0.05)' : 'var(--bg-tertiary)', borderColor: isDragOver ? undefined : 'var(--border-light)' }}
       draggable
       onDragStart={() => onDragStart(index)}
       onDragOver={(e) => onDragOver(e, index)}
@@ -412,7 +416,8 @@ function ColumnEditor({
           <circle cx="8" cy="18" r="1.5" /><circle cx="16" cy="18" r="1.5" />
         </svg>
         <input
-          className="flex-1 bg-transparent text-gray-200 text-xs outline-none border-b border-transparent focus:border-gray-600 transition-colors"
+          className="flex-1 bg-transparent text-xs outline-none border-b border-transparent focus:border-gray-600 transition-colors"
+          style={{ color: 'var(--text-primary)' }}
           value={column.name}
           onChange={(e) => updateColumn(tableId, column.id, { name: e.target.value })}
           placeholder="column_name"
@@ -431,7 +436,8 @@ function ColumnEditor({
       {/* Type dropdown */}
       <div className="mb-1.5">
         <select
-          className="w-full bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-1 rounded border border-gray-700 outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+          className="w-full text-[11px] px-2 py-1 rounded border outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+          style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}
           value={column.type}
           onChange={(e) => updateColumn(tableId, column.id, { type: e.target.value })}
         >
@@ -455,39 +461,43 @@ function ColumnEditor({
 
       {/* Checkboxes */}
       <div className="flex items-center gap-2 text-[11px] mb-1.5">
-        <label className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-gray-400 transition-colors">
+        <label className="flex items-center gap-1 cursor-pointer transition-colors" style={{ color: 'var(--text-muted)' }}>
           <input
             type="checkbox"
             checked={column.isPrimaryKey}
             onChange={(e) => updateColumn(tableId, column.id, { isPrimaryKey: e.target.checked })}
-            className="rounded border-gray-600 bg-[#1a1d27] text-blue-500 focus:ring-blue-500/30 w-3 h-3"
+            className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/30 w-3 h-3"
+            style={{ background: 'var(--bg-secondary)' }}
           />
           PK
         </label>
-        <label className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-gray-400 transition-colors">
+        <label className="flex items-center gap-1 cursor-pointer transition-colors" style={{ color: 'var(--text-muted)' }}>
           <input
             type="checkbox"
             checked={column.isNullable}
             onChange={(e) => updateColumn(tableId, column.id, { isNullable: e.target.checked })}
-            className="rounded border-gray-600 bg-[#1a1d27] text-blue-500 focus:ring-blue-500/30 w-3 h-3"
+            className="rounded border-gray-600 text-blue-500 focus:ring-blue-500/30 w-3 h-3"
+            style={{ background: 'var(--bg-secondary)' }}
           />
           Null
         </label>
-        <label className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-gray-400 transition-colors">
+        <label className="flex items-center gap-1 cursor-pointer transition-colors" style={{ color: 'var(--text-muted)' }}>
           <input
             type="checkbox"
             checked={column.isUnique || false}
             onChange={(e) => updateColumn(tableId, column.id, { isUnique: e.target.checked || undefined })}
-            className="rounded border-gray-600 bg-[#1a1d27] text-purple-500 focus:ring-purple-500/30 w-3 h-3"
+            className="rounded border-gray-600 text-purple-500 focus:ring-purple-500/30 w-3 h-3"
+            style={{ background: 'var(--bg-secondary)' }}
           />
           UQ
         </label>
-        <label className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-gray-400 transition-colors">
+        <label className="flex items-center gap-1 cursor-pointer transition-colors" style={{ color: 'var(--text-muted)' }}>
           <input
             type="checkbox"
             checked={column.isIndexed || false}
             onChange={(e) => updateColumn(tableId, column.id, { isIndexed: e.target.checked || undefined })}
-            className="rounded border-gray-600 bg-[#1a1d27] text-green-500 focus:ring-green-500/30 w-3 h-3"
+            className="rounded border-gray-600 text-green-500 focus:ring-green-500/30 w-3 h-3"
+            style={{ background: 'var(--bg-secondary)' }}
           />
           IDX
         </label>
@@ -495,13 +505,15 @@ function ColumnEditor({
       {/* Default + Comment */}
       <div className="flex gap-1.5">
         <input
-          className="flex-1 bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
+          className="flex-1 text-[11px] px-2 py-0.5 rounded border outline-none focus:border-gray-600 transition-colors"
+          style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderColor: 'var(--border-light)' }}
           value={column.defaultValue || ''}
           onChange={(e) => updateColumn(tableId, column.id, { defaultValue: e.target.value || null })}
           placeholder="default"
         />
         <input
-          className="flex-1 bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
+          className="flex-1 text-[11px] px-2 py-0.5 rounded border outline-none focus:border-gray-600 transition-colors"
+          style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderColor: 'var(--border-light)' }}
           value={column.comment || ''}
           onChange={(e) => updateColumn(tableId, column.id, { comment: e.target.value || undefined })}
           placeholder="comment"
@@ -538,7 +550,7 @@ function EnumEditor({
   };
 
   return (
-    <div className="bg-[#252830] rounded-md border border-gray-700/50 overflow-hidden">
+    <div className="rounded-md border overflow-hidden" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)' }}>
       <div
         className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer hover:bg-white/5 transition-colors"
         onClick={onToggleEdit}
@@ -549,7 +561,7 @@ function EnumEditor({
           <line x1="8" y1="13" x2="16" y2="13" />
           <line x1="8" y1="17" x2="12" y2="17" />
         </svg>
-        <span className="text-xs text-gray-300 truncate flex-1 font-medium">{enumType.name}</span>
+        <span className="text-xs truncate flex-1 font-medium" style={{ color: 'var(--text-primary)' }}>{enumType.name}</span>
         <span className="text-[10px] text-gray-500">{enumType.values.length}</span>
         <svg
           width="10"
@@ -565,10 +577,11 @@ function EnumEditor({
       </div>
 
       {isEditing && (
-        <div className="px-2.5 pb-2.5 space-y-1.5 border-t border-gray-700/50 pt-2">
+        <div className="px-2.5 pb-2.5 space-y-1.5 border-t pt-2" style={{ borderColor: 'var(--border-light)' }}>
           {/* Enum name */}
           <input
-            className="w-full bg-[#1a1d27] text-gray-200 text-xs px-2 py-1 rounded border border-gray-700 focus:border-blue-500 outline-none transition-colors"
+            className="w-full text-xs px-2 py-1 rounded border focus:border-blue-500 outline-none transition-colors"
+            style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
             value={enumType.name}
             onChange={(e) => updateEnum(enumType.id, { name: e.target.value })}
             placeholder="enum_name"
@@ -578,7 +591,7 @@ function EnumEditor({
           <div className="space-y-0.5">
             {enumType.values.map((val) => (
               <div key={val} className="flex items-center gap-1 group">
-                <span className="text-[11px] text-gray-400 flex-1 truncate px-1">{val}</span>
+                <span className="text-[11px] flex-1 truncate px-1" style={{ color: 'var(--text-secondary)' }}>{val}</span>
                 <button
                   className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all p-0.5"
                   onClick={() => handleRemoveValue(val)}
@@ -595,7 +608,8 @@ function EnumEditor({
           {/* Add value */}
           <div className="flex gap-1">
             <input
-              className="flex-1 bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
+              className="flex-1 text-[11px] px-2 py-0.5 rounded border outline-none focus:border-gray-600 transition-colors"
+              style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderColor: 'var(--border-light)' }}
               value={newValue}
               onChange={(e) => setNewValue(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleAddValue(); }}

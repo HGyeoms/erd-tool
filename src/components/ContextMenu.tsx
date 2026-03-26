@@ -42,18 +42,19 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   return (
     <div
       ref={ref}
-      className="fixed z-[9999] min-w-[180px] rounded-xl border border-gray-700/50 bg-[#1a1d27] py-1.5 shadow-2xl animate-in"
-      style={{ left: adjustedX, top: adjustedY }}
+      className="fixed z-[9999] min-w-[180px] rounded-xl border py-1.5 shadow-2xl animate-in"
+      style={{ left: adjustedX, top: adjustedY, background: 'var(--bg-secondary)', borderColor: 'var(--border-light)' }}
     >
       {items.map((item, i) => (
         <div key={i}>
-          {item.divider && <div className="my-1 border-t border-gray-800" />}
+          {item.divider && <div className="my-1 border-t" style={{ borderColor: 'var(--border)' }} />}
           <button
             className={`w-full text-left px-4 py-2 text-xs flex items-center gap-2.5 transition-colors ${
               item.danger
                 ? 'text-red-400 hover:bg-red-500/10'
-                : 'text-gray-300 hover:bg-white/5'
+                : ''
             }`}
+            style={item.danger ? undefined : { color: 'var(--text-secondary)' }}
             onClick={() => {
               item.onClick();
               onClose();

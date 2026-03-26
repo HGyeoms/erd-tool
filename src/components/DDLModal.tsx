@@ -49,13 +49,14 @@ export function DDLModal({ mode, onClose }: DDLModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      style={{ background: 'var(--bg-modal)' }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-[#1a1d27] rounded-xl border border-gray-700 shadow-2xl w-[600px] max-h-[80vh] flex flex-col overflow-hidden">
+      <div className="rounded-xl border shadow-2xl w-[600px] max-h-[80vh] flex flex-col overflow-hidden" style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-          <h2 className="text-white text-sm font-semibold">
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             {mode === 'import' ? 'Import DDL' : 'Export DDL'}
           </h2>
           <button
@@ -104,7 +105,8 @@ export function DDLModal({ mode, onClose }: DDLModalProps) {
                 Paste your CREATE TABLE statements below. Both PostgreSQL and MySQL syntax are supported.
               </p>
               <textarea
-                className="w-full h-64 bg-[#252830] text-gray-300 text-xs font-mono p-4 rounded-lg border border-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none resize-none custom-scrollbar"
+                className="w-full h-64 text-xs font-mono p-4 rounded-lg border focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none resize-none custom-scrollbar"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}
                 placeholder={`CREATE TABLE users (\n  id SERIAL PRIMARY KEY,\n  email VARCHAR(255) NOT NULL,\n  name VARCHAR(100),\n  created_at TIMESTAMP DEFAULT NOW()\n);`}
                 value={ddlText}
                 onChange={(e) => {
@@ -120,7 +122,8 @@ export function DDLModal({ mode, onClose }: DDLModalProps) {
                 Generated DDL for {tables.length} table{tables.length !== 1 ? 's' : ''}.
               </p>
               <textarea
-                className="w-full h-64 bg-[#252830] text-gray-300 text-xs font-mono p-4 rounded-lg border border-gray-700 outline-none resize-none custom-scrollbar"
+                className="w-full h-64 text-xs font-mono p-4 rounded-lg border outline-none resize-none custom-scrollbar"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', borderColor: 'var(--border)' }}
                 value={exportedDDL}
                 readOnly
                 spellCheck={false}
@@ -144,7 +147,7 @@ export function DDLModal({ mode, onClose }: DDLModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-800">
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t" style={{ borderColor: 'var(--border)' }}>
           <button
             className="px-4 py-1.5 text-xs text-gray-400 hover:text-gray-300 hover:bg-white/5 rounded-md transition-all"
             onClick={onClose}
