@@ -350,8 +350,8 @@ function ColumnEditor({
         </select>
       </div>
 
-      {/* Checkboxes + Default */}
-      <div className="flex items-center gap-3 text-[11px]">
+      {/* Checkboxes */}
+      <div className="flex items-center gap-2 text-[11px] mb-1.5">
         <label className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-gray-400 transition-colors">
           <input
             type="checkbox"
@@ -370,8 +370,29 @@ function ColumnEditor({
           />
           Null
         </label>
+        <label className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-gray-400 transition-colors">
+          <input
+            type="checkbox"
+            checked={column.isUnique || false}
+            onChange={(e) => updateColumn(tableId, column.id, { isUnique: e.target.checked || undefined })}
+            className="rounded border-gray-600 bg-[#1a1d27] text-purple-500 focus:ring-purple-500/30 w-3 h-3"
+          />
+          UQ
+        </label>
+        <label className="flex items-center gap-1 text-gray-500 cursor-pointer hover:text-gray-400 transition-colors">
+          <input
+            type="checkbox"
+            checked={column.isIndexed || false}
+            onChange={(e) => updateColumn(tableId, column.id, { isIndexed: e.target.checked || undefined })}
+            className="rounded border-gray-600 bg-[#1a1d27] text-green-500 focus:ring-green-500/30 w-3 h-3"
+          />
+          IDX
+        </label>
+      </div>
+      {/* Default */}
+      <div>
         <input
-          className="flex-1 bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
+          className="w-full bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
           value={column.defaultValue || ''}
           onChange={(e) => updateColumn(tableId, column.id, { defaultValue: e.target.value || null })}
           placeholder="default"

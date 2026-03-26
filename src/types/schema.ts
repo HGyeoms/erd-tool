@@ -5,6 +5,8 @@ export interface Column {
   isPrimaryKey: boolean;
   isNullable: boolean;
   defaultValue: string | null;
+  isUnique?: boolean;
+  isIndexed?: boolean;
   isForeignKey?: boolean;
   references?: { table: string; column: string };
 }

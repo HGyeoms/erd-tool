@@ -10,6 +10,13 @@ export function exportDDL(schema: Schema, dialect: Dialect): string {
 
   for (const table of schema.tables) {
     statements.push(generateCreateTable(table, schema, dialect));
+    // Generate CREATE INDEX for indexed columns
+    const quote = dialect === 'mysql' ? quoteMySQL : quotePostgres;
+    for (const col of table.columns) {
+      if (col.isIndexed) {
+        statements.push(`CREATE INDEX ${quote(`idx_${table.name}_${col.name}`)} ON ${quote(table.name)} (${quote(col.name)});`);
+      }
+    }
   }
 
   return statements.join('\n\n');
@@ -29,6 +36,12 @@ function generateCreateTable(table: Table, schema: Schema, dialect: Dialect): st
   if (pkColumns.length > 0) {
     const pkNames = pkColumns.map((c) => quote(c.name)).join(', ');
     lines.push(`  PRIMARY KEY (${pkNames})`);
+  }
+
+  // Unique constraints
+  const uniqueColumns = table.columns.filter((c) => c.isUnique);
+  for (const col of uniqueColumns) {
+    lines.push(`  UNIQUE (${quote(col.name)})`);
   }
 
   // Foreign key constraints from relationships
