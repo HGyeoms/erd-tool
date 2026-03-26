@@ -197,6 +197,27 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
               />
             </div>
 
+            {/* Table color picker */}
+            <div className="mb-3">
+              <label className="block text-[11px] text-gray-400 uppercase tracking-wider mb-1.5">
+                Color
+              </label>
+              <div className="flex items-center gap-1.5">
+                {['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#f97316'].map((c) => (
+                  <button
+                    key={c}
+                    className={`w-5 h-5 rounded-full transition-all ${
+                      (selectedTable.color || '#3b82f6') === c
+                        ? 'ring-2 ring-white/40 scale-110'
+                        : 'hover:scale-110 opacity-70 hover:opacity-100'
+                    }`}
+                    style={{ background: c }}
+                    onClick={() => updateTable(selectedTable.id, { color: c })}
+                  />
+                ))}
+              </div>
+            </div>
+
             {/* Column header */}
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] text-gray-400 uppercase tracking-wider">
