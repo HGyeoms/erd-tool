@@ -1,3 +1,4 @@
+import { useReactFlow } from '@xyflow/react';
 import { useSchemaStore } from '../store/schema-store';
 import type { Table } from '../types/schema';
 import { autoLayout } from '../lib/auto-layout';
@@ -18,6 +19,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
   const addTable = useSchemaStore((s) => s.addTable);
   const tables = useSchemaStore((s) => s.tables);
   const store = useSchemaStore;
+  const { fitView } = useReactFlow();
 
   const handleAddTable = () => {
     const id = `table-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -144,6 +146,16 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
         }
         label="Auto Layout"
         onClick={handleAutoLayout}
+      />
+
+      <ToolbarButton
+        icon={
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+          </svg>
+        }
+        label="Fit View"
+        onClick={() => fitView({ padding: 0.2, duration: 400 })}
       />
 
       <div className="w-px h-6 bg-gray-700/50 mx-1" />
