@@ -279,15 +279,13 @@ function WorkspaceCard({
         </div>
         <h3
           className="text-sm font-semibold leading-snug"
-          style={{ color: 'var(--text-primary)', overflowWrap: 'anywhere', wordBreak: 'break-word' as const }}
-          style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+          style={{ color: 'var(--text-primary)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
         >
           {ws.name}
         </h3>
         <p
           className="mt-2 text-xs leading-relaxed line-clamp-3"
-          style={{ color: 'var(--text-secondary)' }}
-          style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+          style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
         >
           {ws.description || 'Start mapping your schema visually.'}
         </p>
