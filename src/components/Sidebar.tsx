@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSchemaStore } from '../store/schema-store';
 import type { Column } from '../types/schema';
 
@@ -26,6 +26,36 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
   const [tableListCollapsed, setTableListCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(288); // 72 * 4 = 288px (w-72)
+  const isResizing = useRef(false);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current) return;
+      const newWidth = Math.min(Math.max(e.clientX, 200), 600);
+      setSidebarWidth(newWidth);
+    };
+    const handleMouseUp = () => {
+      if (isResizing.current) {
+        isResizing.current = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   const handleAddColumn = () => {
     if (!selectedTable) return;
@@ -47,7 +77,7 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
   };
 
   return (
-    <div className="w-72 h-full bg-[#1a1d27] border-r border-gray-800 flex flex-col overflow-hidden">
+    <div className="h-full bg-[#1a1d27] border-r border-gray-800 flex flex-col overflow-hidden relative" style={{ width: sidebarWidth }}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-800">
         <h2 className="text-white text-sm font-semibold tracking-wide flex items-center gap-2">
@@ -199,6 +229,12 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
           </div>
         )}
       </div>
+
+      {/* Resize handle */}
+      <div
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500/40 active:bg-blue-500/60 transition-colors"
+        onMouseDown={handleMouseDown}
+      />
     </div>
   );
 }
