@@ -20,7 +20,12 @@ import '@xyflow/react/dist/style.css';
 import { useSchemaStore } from '../store/schema-store';
 import { TableNode } from './TableNode';
 import { RelationshipEdge } from './RelationshipEdge';
+import { ContextMenu, type ContextMenuItem } from './ContextMenu';
 import type { Table, Relationship } from '../types/schema';
+
+const TABLE_COLORS = [
+  '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#f97316',
+];
 
 const nodeTypes: NodeTypes = {
   tableNode: TableNode as any,
@@ -64,7 +69,10 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
   const relationships = useSchemaStore((s) => s.relationships);
   const updateTablePosition = useSchemaStore((s) => s.updateTablePosition);
   const addRelationship = useSchemaStore((s) => s.addRelationship);
+  const addTable = useSchemaStore((s) => s.addTable);
+  const removeTable = useSchemaStore((s) => s.removeTable);
   const [mode, setMode] = useState<InteractionMode>('select');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: ContextMenuItem[] } | null>(null);
 
   // V key = select mode, H key = hand (pan) mode
   useEffect(() => {
@@ -143,7 +151,66 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
 
   const onPaneClick = useCallback(() => {
     onSelectTable(null);
+    setContextMenu(null);
   }, [onSelectTable]);
+
+  const onNodeContextMenu = useCallback(
+    (e: React.MouseEvent, node: Node) => {
+      e.preventDefault();
+      const table = tables.find((t) => t.id === node.id);
+      if (!table) return;
+
+      const items: ContextMenuItem[] = [
+        {
+          label: 'Duplicate Table',
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>,
+          onClick: () => {
+            const newId = `table-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            const newTable: Table = {
+              ...table,
+              id: newId,
+              name: `${table.name}_copy`,
+              position: { x: table.position.x + 40, y: table.position.y + 40 },
+              columns: table.columns.map((c) => ({
+                ...c,
+                id: `col-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+              })),
+            };
+            addTable(newTable);
+          },
+        },
+        {
+          label: 'Change Color',
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="3" /></svg>,
+          onClick: () => {
+            const currentIdx = TABLE_COLORS.indexOf(table.color || TABLE_COLORS[0]);
+            const nextColor = TABLE_COLORS[(currentIdx + 1) % TABLE_COLORS.length];
+            useSchemaStore.getState().updateTable(table.id, { color: nextColor });
+          },
+        },
+        {
+          label: 'Delete Table',
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
+          onClick: () => {
+            removeTable(table.id);
+            onSelectTable(null);
+          },
+          danger: true,
+          divider: true,
+        },
+      ];
+      setContextMenu({ x: e.clientX, y: e.clientY, items });
+    },
+    [tables, addTable, removeTable, onSelectTable]
+  );
+
+  const onPaneContextMenu = useCallback(
+    (e: React.MouseEvent | MouseEvent) => {
+      e.preventDefault();
+      setContextMenu(null);
+    },
+    []
+  );
 
   const isHandMode = mode === 'hand';
 
@@ -155,6 +222,8 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
         onNodesChange={onNodesChange}
         onConnect={onConnect}
         onPaneClick={onPaneClick}
+        onNodeContextMenu={onNodeContextMenu}
+        onPaneContextMenu={onPaneContextMenu}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
@@ -219,6 +288,16 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
           <span>H</span>
         </button>
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={contextMenu.items}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 }
