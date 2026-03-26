@@ -11,9 +11,10 @@ interface ToolbarProps {
   onExportDDL: () => void;
   onGoHome?: () => void;
   workspaceName?: string;
+  onSearch?: () => void;
 }
 
-export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName }: ToolbarProps) {
+export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onSearch }: ToolbarProps) {
   const addTable = useSchemaStore((s) => s.addTable);
   const tables = useSchemaStore((s) => s.tables);
   const store = useSchemaStore;
@@ -168,6 +169,22 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName }: T
         label="Redo"
         onClick={handleRedo}
       />
+
+      {onSearch && (
+        <>
+          <div className="w-px h-6 bg-gray-700/50 mx-1" />
+          <ToolbarButton
+            icon={
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            }
+            label="Search (⌘F)"
+            onClick={onSearch}
+          />
+        </>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />

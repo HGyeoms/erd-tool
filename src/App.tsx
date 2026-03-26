@@ -4,6 +4,7 @@ import { Canvas } from './components/Canvas';
 import { Sidebar } from './components/Sidebar';
 import { Toolbar } from './components/Toolbar';
 import { DDLModal } from './components/DDLModal';
+import { SearchBar } from './components/SearchBar';
 import { Home } from './components/Home';
 import { useSchemaStore } from './store/schema-store';
 import { useWorkspaceStore } from './store/workspace-store';
@@ -11,6 +12,7 @@ import { useWorkspaceStore } from './store/workspace-store';
 function App() {
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [modalMode, setModalMode] = useState<'import' | 'export' | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
   const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const openWorkspace = useWorkspaceStore((s) => s.openWorkspace);
@@ -108,6 +110,18 @@ function App() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Cmd+F / Ctrl+F to open search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault();
+        setShowSearch((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   if (!currentWorkspace) {
     return <Home onOpenWorkspace={handleOpenWorkspace} />;
   }
@@ -121,10 +135,11 @@ function App() {
           workspaceName={currentWorkspace.name}
           onImportDDL={() => setModalMode('import')}
           onExportDDL={() => setModalMode('export')}
+          onSearch={() => setShowSearch((v) => !v)}
         />
 
         {/* Main Content */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
           {/* Sidebar */}
           <Sidebar
             selectedTableId={selectedTableId}
@@ -138,6 +153,14 @@ function App() {
               onSelectTable={handleSelectTable}
             />
           </div>
+
+          {/* Search Bar */}
+          {showSearch && (
+            <SearchBar
+              onSelectTable={handleSelectTable}
+              onClose={() => setShowSearch(false)}
+            />
+          )}
         </div>
 
         {/* DDL Modal */}
