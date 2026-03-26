@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSchemaStore } from '../store/schema-store';
-import type { Column } from '../types/schema';
+import type { Column, EnumType } from '../types/schema';
 
 const SQL_TYPES = [
   'INTEGER', 'BIGINT', 'SMALLINT', 'SERIAL', 'BIGSERIAL',
@@ -24,9 +24,15 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
   const removeColumn = useSchemaStore((s) => s.removeColumn);
   const reorderColumns = useSchemaStore((s) => s.reorderColumns);
   const updateTable = useSchemaStore((s) => s.updateTable);
+  const enums = useSchemaStore((s) => s.enums) || [];
+  const addEnum = useSchemaStore((s) => s.addEnum);
+  const updateEnum = useSchemaStore((s) => s.updateEnum);
+  const removeEnum = useSchemaStore((s) => s.removeEnum);
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
   const [tableListCollapsed, setTableListCollapsed] = useState(false);
+  const [enumListCollapsed, setEnumListCollapsed] = useState(true);
+  const [editingEnumId, setEditingEnumId] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(288); // 72 * 4 = 288px (w-72)
   const isResizing = useRef(false);
 
@@ -170,6 +176,59 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
         )}
       </div>
 
+      {/* Enum Types */}
+      <div className="flex-shrink-0">
+        <button
+          className="w-full px-4 py-2 flex items-center justify-between text-xs text-gray-400 hover:text-gray-300 transition-colors"
+          onClick={() => setEnumListCollapsed(!enumListCollapsed)}
+        >
+          <span className="uppercase tracking-wider font-medium">
+            Enums ({enums.length})
+          </span>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className={`transition-transform ${enumListCollapsed ? '-rotate-90' : ''}`}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        {!enumListCollapsed && (
+          <div className="px-3 pb-2 space-y-1.5">
+            {enums.map((enumType) => (
+              <EnumEditor
+                key={enumType.id}
+                enumType={enumType}
+                isEditing={editingEnumId === enumType.id}
+                onToggleEdit={() => setEditingEnumId(editingEnumId === enumType.id ? null : enumType.id)}
+                updateEnum={updateEnum}
+                removeEnum={removeEnum}
+              />
+            ))}
+            <button
+              className="w-full text-[11px] text-blue-400 hover:text-blue-300 py-1.5 rounded-md hover:bg-blue-500/10 transition-all flex items-center justify-center gap-1"
+              onClick={() => {
+                const id = `enum-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+                addEnum({ id, name: `status_${enums.length + 1}`, values: ['value1', 'value2'] });
+                setEditingEnumId(id);
+                setEnumListCollapsed(false);
+              }}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Enum
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Divider */}
       <div className="border-t border-gray-800" />
 
@@ -264,6 +323,7 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   onDragEnd={handleDragEnd}
+                  enums={enums}
                 />
               ))}
             </div>
@@ -318,6 +378,7 @@ function ColumnEditor({
   onDragOver,
   onDrop,
   onDragEnd,
+  enums,
 }: {
   column: Column;
   index: number;
@@ -330,6 +391,7 @@ function ColumnEditor({
   onDragOver: (e: React.DragEvent, index: number) => void;
   onDrop: (index: number) => void;
   onDragEnd: () => void;
+  enums: EnumType[];
 }) {
   return (
     <div
@@ -378,7 +440,14 @@ function ColumnEditor({
               {t}
             </option>
           ))}
-          {!SQL_TYPES.includes(column.type) && (
+          {enums.length > 0 && (
+            <optgroup label="ENUM Types">
+              {enums.map((e) => (
+                <option key={e.id} value={e.name}>{e.name}</option>
+              ))}
+            </optgroup>
+          )}
+          {!SQL_TYPES.includes(column.type) && !enums.some((e) => e.name === column.type) && (
             <option value={column.type}>{column.type}</option>
           )}
         </select>
@@ -438,6 +507,117 @@ function ColumnEditor({
           placeholder="comment"
         />
       </div>
+    </div>
+  );
+}
+
+function EnumEditor({
+  enumType,
+  isEditing,
+  onToggleEdit,
+  updateEnum,
+  removeEnum,
+}: {
+  enumType: EnumType;
+  isEditing: boolean;
+  onToggleEdit: () => void;
+  updateEnum: (enumId: string, updates: Partial<Omit<EnumType, 'id'>>) => void;
+  removeEnum: (enumId: string) => void;
+}) {
+  const [newValue, setNewValue] = useState('');
+
+  const handleAddValue = () => {
+    const trimmed = newValue.trim();
+    if (!trimmed || enumType.values.includes(trimmed)) return;
+    updateEnum(enumType.id, { values: [...enumType.values, trimmed] });
+    setNewValue('');
+  };
+
+  const handleRemoveValue = (val: string) => {
+    updateEnum(enumType.id, { values: enumType.values.filter((v) => v !== val) });
+  };
+
+  return (
+    <div className="bg-[#252830] rounded-md border border-gray-700/50 overflow-hidden">
+      <div
+        className="flex items-center gap-2 px-2.5 py-1.5 cursor-pointer hover:bg-white/5 transition-colors"
+        onClick={onToggleEdit}
+      >
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" className="flex-shrink-0">
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <line x1="8" y1="9" x2="16" y2="9" />
+          <line x1="8" y1="13" x2="16" y2="13" />
+          <line x1="8" y1="17" x2="12" y2="17" />
+        </svg>
+        <span className="text-xs text-gray-300 truncate flex-1 font-medium">{enumType.name}</span>
+        <span className="text-[10px] text-gray-500">{enumType.values.length}</span>
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className={`text-gray-500 transition-transform ${isEditing ? '' : '-rotate-90'}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </div>
+
+      {isEditing && (
+        <div className="px-2.5 pb-2.5 space-y-1.5 border-t border-gray-700/50 pt-2">
+          {/* Enum name */}
+          <input
+            className="w-full bg-[#1a1d27] text-gray-200 text-xs px-2 py-1 rounded border border-gray-700 focus:border-blue-500 outline-none transition-colors"
+            value={enumType.name}
+            onChange={(e) => updateEnum(enumType.id, { name: e.target.value })}
+            placeholder="enum_name"
+          />
+
+          {/* Values list */}
+          <div className="space-y-0.5">
+            {enumType.values.map((val) => (
+              <div key={val} className="flex items-center gap-1 group">
+                <span className="text-[11px] text-gray-400 flex-1 truncate px-1">{val}</span>
+                <button
+                  className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all p-0.5"
+                  onClick={() => handleRemoveValue(val)}
+                >
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Add value */}
+          <div className="flex gap-1">
+            <input
+              className="flex-1 bg-[#1a1d27] text-gray-400 text-[11px] px-2 py-0.5 rounded border border-gray-700/50 outline-none focus:border-gray-600 transition-colors"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAddValue(); }}
+              placeholder="new value..."
+            />
+            <button
+              className="text-[10px] text-blue-400 hover:text-blue-300 px-1.5 rounded hover:bg-blue-500/10 transition-all"
+              onClick={handleAddValue}
+            >
+              Add
+            </button>
+          </div>
+
+          {/* Delete enum */}
+          <button
+            className="w-full text-[11px] text-red-400/70 hover:text-red-400 py-1 rounded hover:bg-red-500/10 transition-all"
+            onClick={() => removeEnum(enumType.id)}
+          >
+            Delete Enum
+          </button>
+        </div>
+      )}
     </div>
   );
 }

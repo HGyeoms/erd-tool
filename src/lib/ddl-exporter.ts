@@ -8,6 +8,17 @@ type Dialect = 'postgresql' | 'mysql';
 export function exportDDL(schema: Schema, dialect: Dialect): string {
   const statements: string[] = [];
 
+  // Generate ENUM type definitions
+  if (schema.enums && schema.enums.length > 0) {
+    for (const enumType of schema.enums) {
+      if (dialect === 'postgresql') {
+        const values = enumType.values.map((v) => `'${v.replace(/'/g, "''")}'`).join(', ');
+        statements.push(`CREATE TYPE ${quotePostgres(enumType.name)} AS ENUM (${values});`);
+      }
+      // MySQL handles ENUM inline in column definitions
+    }
+  }
+
   for (const table of schema.tables) {
     statements.push(generateCreateTable(table, schema, dialect));
     const quote = dialect === 'mysql' ? quoteMySQL : quotePostgres;
@@ -33,13 +44,21 @@ export function exportDDL(schema: Schema, dialect: Dialect): string {
   return statements.join('\n\n');
 }
 
+function isEnumType(typeName: string, schema: Schema): boolean {
+  return (schema.enums || []).some((e) => e.name === typeName);
+}
+
+function getEnumValues(typeName: string, schema: Schema): string[] {
+  return (schema.enums || []).find((e) => e.name === typeName)?.values || [];
+}
+
 function generateCreateTable(table: Table, schema: Schema, dialect: Dialect): string {
   const quote = dialect === 'mysql' ? quoteMySQL : quotePostgres;
   const lines: string[] = [];
 
   // Column definitions
   for (const col of table.columns) {
-    lines.push(`  ${formatColumn(col, dialect)}`);
+    lines.push(`  ${formatColumn(col, dialect, schema)}`);
   }
 
   // Primary key constraint (collect all PK columns)
@@ -82,12 +101,23 @@ function generateCreateTable(table: Table, schema: Schema, dialect: Dialect): st
   return stmt;
 }
 
-function formatColumn(col: Column, dialect: Dialect): string {
+function formatColumn(col: Column, dialect: Dialect, schema: Schema): string {
   const quote = dialect === 'mysql' ? quoteMySQL : quotePostgres;
   const parts: string[] = [quote(col.name)];
 
-  // Map type to dialect-specific syntax
-  parts.push(mapType(col.type, dialect));
+  // Handle enum types
+  if (isEnumType(col.type, schema)) {
+    if (dialect === 'mysql') {
+      const values = getEnumValues(col.type, schema).map((v) => `'${v.replace(/'/g, "''")}'`).join(', ');
+      parts.push(`ENUM(${values})`);
+    } else {
+      // PostgreSQL uses the CREATE TYPE name directly
+      parts.push(quote(col.type));
+    }
+  } else {
+    // Map type to dialect-specific syntax
+    parts.push(mapType(col.type, dialect));
+  }
 
   // NOT NULL
   if (!col.isNullable) {

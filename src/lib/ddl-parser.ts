@@ -1,4 +1,4 @@
-import type { Schema, Table, Column, Relationship } from '../types/schema';
+import type { Schema, Table, Column, Relationship, EnumType } from '../types/schema';
 
 /**
  * Parse DDL SQL (CREATE TABLE statements) into a Schema.
@@ -7,6 +7,7 @@ import type { Schema, Table, Column, Relationship } from '../types/schema';
 export function parseDDL(sql: string): Schema {
   const tables: Table[] = [];
   const relationships: Relationship[] = [];
+  const enums: EnumType[] = [];
   const tableMap = new Map<string, Table>();
 
   try {
@@ -15,6 +16,23 @@ export function parseDDL(sql: string): Schema {
       .replace(/--[^\n]*/g, '')
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .trim();
+
+    // Extract CREATE TYPE ... AS ENUM (...) (PostgreSQL)
+    const createTypeRegex = /CREATE\s+TYPE\s+(?:`([^`]+)`|"([^"]+)"|(\w+))\s+AS\s+ENUM\s*\(([^)]+)\)/gi;
+    let enumMatch: RegExpExecArray | null;
+    while ((enumMatch = createTypeRegex.exec(cleaned)) !== null) {
+      const enumName = enumMatch[1] || enumMatch[2] || enumMatch[3];
+      const valuesStr = enumMatch[4];
+      const values = valuesStr.split(',').map((v) => {
+        const trimmed = v.trim();
+        if ((trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+            (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+          return trimmed.slice(1, -1);
+        }
+        return trimmed;
+      });
+      enums.push({ id: crypto.randomUUID(), name: enumName, values });
+    }
 
     // Extract CREATE TABLE statements using balanced parentheses
     const createTableHeaderRegex =
@@ -100,7 +118,7 @@ export function parseDDL(sql: string): Schema {
     // Return whatever we've parsed so far
   }
 
-  return { tables, relationships };
+  return { tables, relationships, enums: enums.length > 0 ? enums : undefined };
 }
 
 interface FKDef {

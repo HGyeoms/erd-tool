@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { temporal } from 'zundo';
-import type { Schema, Table, Column, Relationship } from '../types/schema';
+import type { Schema, Table, Column, Relationship, EnumType } from '../types/schema';
 
 const STORAGE_KEY = 'erd-tool-schema';
 
@@ -39,12 +39,15 @@ export interface SchemaState extends Schema {
   updateRelationship: (relationshipId: string, updates: Partial<Omit<Relationship, 'id'>>) => void;
   removeRelationship: (relationshipId: string) => void;
   updateTablePosition: (tableId: string, position: { x: number; y: number }) => void;
+  addEnum: (enumType: EnumType) => void;
+  updateEnum: (enumId: string, updates: Partial<Omit<EnumType, 'id'>>) => void;
+  removeEnum: (enumId: string) => void;
   importSchema: (schema: Schema) => void;
   setSchema: (schema: Schema) => void;
 }
 
 function persist(state: SchemaState) {
-  saveToStorage({ tables: state.tables, relationships: state.relationships });
+  saveToStorage({ tables: state.tables, relationships: state.relationships, enums: state.enums });
 }
 
 const initialSchema = loadFromStorage();
@@ -54,6 +57,7 @@ export const useSchemaStore = create<SchemaState>()(
     (set) => ({
       tables: initialSchema.tables,
       relationships: initialSchema.relationships,
+      enums: initialSchema.enums || [],
 
       addTable: (table: Table) =>
         set((state) => {
@@ -187,14 +191,44 @@ export const useSchemaStore = create<SchemaState>()(
           return next;
         }),
 
+      addEnum: (enumType: EnumType) =>
+        set((state) => {
+          const next = { enums: [...(state.enums || []), enumType] };
+          persist({ ...state, ...next });
+          return next;
+        }),
+
+      updateEnum: (enumId: string, updates: Partial<Omit<EnumType, 'id'>>) =>
+        set((state) => {
+          const next = {
+            enums: (state.enums || []).map((e) =>
+              e.id === enumId ? { ...e, ...updates } : e
+            ),
+          };
+          persist({ ...state, ...next });
+          return next;
+        }),
+
+      removeEnum: (enumId: string) =>
+        set((state) => {
+          const next = {
+            enums: (state.enums || []).filter((e) => e.id !== enumId),
+          };
+          persist({ ...state, ...next });
+          return next;
+        }),
+
       importSchema: (schema: Schema) =>
         set((state) => {
           // Merge: add new tables, skip duplicates by name
           const existingNames = new Set(state.tables.map((t) => t.name));
           const newTables = schema.tables.filter((t) => !existingNames.has(t.name));
+          const existingEnumNames = new Set((state.enums || []).map((e) => e.name));
+          const newEnums = (schema.enums || []).filter((e) => !existingEnumNames.has(e.name));
           const next = {
             tables: [...state.tables, ...newTables],
             relationships: [...state.relationships, ...schema.relationships],
+            enums: [...(state.enums || []), ...newEnums],
           };
           persist({ ...state, ...next });
           return next;
@@ -202,7 +236,7 @@ export const useSchemaStore = create<SchemaState>()(
 
       setSchema: (schema: Schema) =>
         set((state) => {
-          const next = { tables: schema.tables, relationships: schema.relationships };
+          const next = { tables: schema.tables, relationships: schema.relationships, enums: schema.enums || [] };
           persist({ ...state, ...next });
           return next;
         }),

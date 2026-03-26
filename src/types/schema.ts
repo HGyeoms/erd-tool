@@ -30,7 +30,14 @@ export interface Relationship {
   type: '1:1' | '1:N' | 'N:M';
 }
 
+export interface EnumType {
+  id: string;
+  name: string;
+  values: string[];
+}
+
 export interface Schema {
   tables: Table[];
   relationships: Relationship[];
+  enums?: EnumType[];
 }
