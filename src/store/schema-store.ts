@@ -34,6 +34,7 @@ export interface SchemaState extends Schema {
   addColumn: (tableId: string, column: Column) => void;
   updateColumn: (tableId: string, columnId: string, updates: Partial<Omit<Column, 'id'>>) => void;
   removeColumn: (tableId: string, columnId: string) => void;
+  reorderColumns: (tableId: string, fromIndex: number, toIndex: number) => void;
   addRelationship: (relationship: Relationship) => void;
   updateRelationship: (relationshipId: string, updates: Partial<Omit<Relationship, 'id'>>) => void;
   removeRelationship: (relationshipId: string) => void;
@@ -128,6 +129,21 @@ export const useSchemaStore = create<SchemaState>()(
                   (r.targetTableId === tableId && r.targetColumnId === columnId)
                 )
             ),
+          };
+          persist({ ...state, ...next });
+          return next;
+        }),
+
+      reorderColumns: (tableId: string, fromIndex: number, toIndex: number) =>
+        set((state) => {
+          const next = {
+            tables: state.tables.map((t) => {
+              if (t.id !== tableId) return t;
+              const cols = [...t.columns];
+              const [moved] = cols.splice(fromIndex, 1);
+              cols.splice(toIndex, 0, moved);
+              return { ...t, columns: cols };
+            }),
           };
           persist({ ...state, ...next });
           return next;

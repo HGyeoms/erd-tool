@@ -22,6 +22,7 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
   const addColumn = useSchemaStore((s) => s.addColumn);
   const updateColumn = useSchemaStore((s) => s.updateColumn);
   const removeColumn = useSchemaStore((s) => s.removeColumn);
+  const reorderColumns = useSchemaStore((s) => s.reorderColumns);
   const updateTable = useSchemaStore((s) => s.updateTable);
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
@@ -68,6 +69,31 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
       isNullable: true,
       defaultValue: null,
     });
+  };
+
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleDragStart = (index: number) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (index: number) => {
+    if (dragIndex !== null && selectedTable && dragIndex !== index) {
+      reorderColumns(selectedTable.id, dragIndex, index);
+    }
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleDeleteTable = () => {
@@ -190,13 +216,20 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
 
             {/* Column list */}
             <div className="space-y-2">
-              {selectedTable.columns.map((col) => (
+              {selectedTable.columns.map((col, index) => (
                 <ColumnEditor
                   key={col.id}
                   column={col}
+                  index={index}
                   tableId={selectedTable.id}
                   updateColumn={updateColumn}
                   removeColumn={removeColumn}
+                  isDragging={dragIndex === index}
+                  isDragOver={dragOverIndex === index}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onDragEnd={handleDragEnd}
                 />
               ))}
             </div>
@@ -241,19 +274,47 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
 
 function ColumnEditor({
   column,
+  index,
   tableId,
   updateColumn,
   removeColumn,
+  isDragging,
+  isDragOver,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
 }: {
   column: Column;
+  index: number;
   tableId: string;
   updateColumn: (tableId: string, colId: string, updates: Partial<Omit<Column, 'id'>>) => void;
   removeColumn: (tableId: string, colId: string) => void;
+  isDragging: boolean;
+  isDragOver: boolean;
+  onDragStart: (index: number) => void;
+  onDragOver: (e: React.DragEvent, index: number) => void;
+  onDrop: (index: number) => void;
+  onDragEnd: () => void;
 }) {
   return (
-    <div className="bg-[#252830] rounded-md p-2.5 border border-gray-700/50 hover:border-gray-600/50 transition-all group">
+    <div
+      className={`bg-[#252830] rounded-md p-2.5 border transition-all group ${
+        isDragOver ? 'border-blue-500/60 bg-blue-500/5' : isDragging ? 'opacity-40 border-gray-700/50' : 'border-gray-700/50 hover:border-gray-600/50'
+      }`}
+      draggable
+      onDragStart={() => onDragStart(index)}
+      onDragOver={(e) => onDragOver(e, index)}
+      onDrop={() => onDrop(index)}
+      onDragEnd={onDragEnd}
+    >
       {/* Name + Delete */}
       <div className="flex items-center gap-1.5 mb-1.5">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="3" className="flex-shrink-0 cursor-grab active:cursor-grabbing">
+          <circle cx="8" cy="6" r="1.5" /><circle cx="16" cy="6" r="1.5" />
+          <circle cx="8" cy="12" r="1.5" /><circle cx="16" cy="12" r="1.5" />
+          <circle cx="8" cy="18" r="1.5" /><circle cx="16" cy="18" r="1.5" />
+        </svg>
         <input
           className="flex-1 bg-transparent text-gray-200 text-xs outline-none border-b border-transparent focus:border-gray-600 transition-colors"
           value={column.name}
