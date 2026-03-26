@@ -8,7 +8,7 @@ interface VersionPanelProps {
 }
 
 export function VersionPanel({ workspaceId, onClose }: VersionPanelProps) {
-  const versions = useVersionStore((s) => s.getVersions(workspaceId));
+  const versions = useVersionStore((s) => s.versions.filter((v) => v.workspaceId === workspaceId));
   const saveVersion = useVersionStore((s) => s.saveVersion);
   const removeVersion = useVersionStore((s) => s.removeVersion);
   const restoreVersion = useVersionStore((s) => s.restoreVersion);
