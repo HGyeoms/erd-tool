@@ -27,7 +27,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
   const tables = useSchemaStore((s) => s.tables);
   const groups = useSchemaStore((s) => s.groups) || [];
   const store = useSchemaStore;
-  const { fitView } = useReactFlow();
+  const { fitView, screenToFlowPosition } = useReactFlow();
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
@@ -58,12 +58,15 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
   const handleAddGroup = () => {
     const id = `group-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const color = GROUP_COLORS[groups.length % GROUP_COLORS.length];
-    const offset = groups.length * 30;
+    const center = screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    });
     const group: TableGroup = {
       id,
       name: `Group ${groups.length + 1}`,
       color,
-      position: { x: 50 + offset, y: 50 + offset },
+      position: { x: center.x - 200, y: center.y - 150 },
       size: { width: 400, height: 300 },
     };
     addGroup(group);
