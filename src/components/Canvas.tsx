@@ -39,13 +39,12 @@ const edgeTypes: EdgeTypes = {
   relationship: RelationshipEdge as any,
 };
 
-function tableToNode(table: Table, selectedTableId: string | null): Node {
+function tableToNode(table: Table): Node {
   return {
     id: table.id,
     type: 'tableNode',
     position: table.position,
-    data: { ...table, selected: table.id === selectedTableId },
-    selected: table.id === selectedTableId,
+    data: { ...table },
   };
 }
 
@@ -113,9 +112,9 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
   const storeNodes = useMemo(
     () => [
       ...groups.map(groupToNode),
-      ...tables.map((t) => tableToNode(t, selectedTableId)),
+      ...tables.map((t) => tableToNode(t)),
     ],
-    [tables, groups, selectedTableId]
+    [tables, groups]
   );
 
   const [localNodes, setLocalNodes] = useState<Node[]>(storeNodes);
@@ -175,6 +174,20 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
       });
     },
     [addRelationship]
+  );
+
+  const onNodesDelete = useCallback(
+    (deletedNodes: Node[]) => {
+      for (const node of deletedNodes) {
+        if (node.id.startsWith('group-')) {
+          removeGroup(node.id);
+        } else {
+          removeTable(node.id);
+        }
+      }
+      onSelectTable(null);
+    },
+    [removeTable, removeGroup, onSelectTable]
   );
 
   const onPaneClick = useCallback(() => {
@@ -276,6 +289,7 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
         nodes={localNodes}
         edges={edges}
         onNodesChange={onNodesChange}
+        onNodesDelete={onNodesDelete}
         onConnect={onConnect}
         onPaneClick={onPaneClick}
         onNodeContextMenu={onNodeContextMenu}
@@ -283,6 +297,7 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         connectionMode={ConnectionMode.Loose}
+        deleteKeyCode={['Backspace', 'Delete']}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         defaultEdgeOptions={{ type: 'relationship' }}
