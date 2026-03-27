@@ -11,6 +11,7 @@ export function Home({ onOpenWorkspace }: HomeProps) {
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const addWorkspace = useWorkspaceStore((s) => s.addWorkspace);
   const removeWorkspace = useWorkspaceStore((s) => s.removeWorkspace);
+  const loading = useWorkspaceStore((s) => s.loading);
   const [showModal, setShowModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const theme = useThemeStore((s) => s.theme);
@@ -74,6 +75,12 @@ export function Home({ onOpenWorkspace }: HomeProps) {
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="grid min-h-full place-items-center px-6 py-10 sm:px-8 sm:py-14">
+          {loading ? (
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+              <span className="text-sm text-gray-500">Loading workspaces...</span>
+            </div>
+          ) : (
           <div>
             {workspaces.length > 0 && (
               <div className="mb-6 text-center sm:mb-8">
@@ -146,6 +153,7 @@ export function Home({ onOpenWorkspace }: HomeProps) {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
 

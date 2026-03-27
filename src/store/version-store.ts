@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Schema } from '../types/schema';
+import { supabase } from '../lib/supabase';
 
-const STORAGE_KEY = 'erd-tool-versions';
 const MAX_VERSIONS_PER_WORKSPACE = 30;
 
 export interface SchemaVersion {
@@ -10,7 +10,7 @@ export interface SchemaVersion {
   label: string;
   schema: Schema;
   createdAt: string;
-  auto: boolean; // true = auto-save, false = manual save
+  auto: boolean;
 }
 
 interface VersionState {
@@ -20,31 +20,33 @@ interface VersionState {
   restoreVersion: (versionId: string) => Schema | null;
   removeVersion: (versionId: string) => void;
   getVersions: (workspaceId: string) => SchemaVersion[];
+  fetchVersions: () => Promise<void>;
 }
 
-function loadVersions(): SchemaVersion[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch {
-    // ignore
-  }
-  return [];
-}
-
-function saveVersions(versions: SchemaVersion[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(versions));
-  } catch {
-    // ignore storage errors
-  }
+function rowToVersion(row: any): SchemaVersion {
+  return {
+    id: row.id,
+    workspaceId: row.workspace_id,
+    label: row.label,
+    schema: row.schema,
+    createdAt: row.created_at,
+    auto: row.auto,
+  };
 }
 
 export const useVersionStore = create<VersionState>((set, get) => ({
-  versions: loadVersions(),
+  versions: [],
+
+  fetchVersions: async () => {
+    const { data, error } = await supabase
+      .from('schema_versions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      set({ versions: data.map(rowToVersion) });
+    }
+  },
 
   saveVersion: (workspaceId: string, schema: Schema, label?: string) => {
     const version: SchemaVersion = {
@@ -55,21 +57,31 @@ export const useVersionStore = create<VersionState>((set, get) => ({
       createdAt: new Date().toISOString(),
       auto: false,
     };
+
     set((state) => {
       const wsVersions = state.versions.filter((v) => v.workspaceId === workspaceId);
       const otherVersions = state.versions.filter((v) => v.workspaceId !== workspaceId);
       const updated = [version, ...wsVersions].slice(0, MAX_VERSIONS_PER_WORKSPACE);
-      const all = [...updated, ...otherVersions];
-      saveVersions(all);
-      return { versions: all };
+      return { versions: [...updated, ...otherVersions] };
     });
+
+    supabase
+      .from('schema_versions')
+      .insert({
+        id: version.id,
+        workspace_id: workspaceId,
+        label: version.label,
+        schema: version.schema,
+        auto: false,
+        created_at: version.createdAt,
+      })
+      .then();
   },
 
   autoSave: (workspaceId: string, schema: Schema) => {
     const state = get();
     const wsVersions = state.versions.filter((v) => v.workspaceId === workspaceId);
 
-    // Don't auto-save if last auto-save was less than 5 minutes ago
     const lastAuto = wsVersions.find((v) => v.auto);
     if (lastAuto) {
       const elapsed = Date.now() - new Date(lastAuto.createdAt).getTime();
@@ -84,14 +96,25 @@ export const useVersionStore = create<VersionState>((set, get) => ({
       createdAt: new Date().toISOString(),
       auto: true,
     };
+
     set((s) => {
       const wsVersions = s.versions.filter((v) => v.workspaceId === workspaceId);
       const otherVersions = s.versions.filter((v) => v.workspaceId !== workspaceId);
       const updated = [version, ...wsVersions].slice(0, MAX_VERSIONS_PER_WORKSPACE);
-      const all = [...updated, ...otherVersions];
-      saveVersions(all);
-      return { versions: all };
+      return { versions: [...updated, ...otherVersions] };
     });
+
+    supabase
+      .from('schema_versions')
+      .insert({
+        id: version.id,
+        workspace_id: workspaceId,
+        label: version.label,
+        schema: version.schema,
+        auto: true,
+        created_at: version.createdAt,
+      })
+      .then();
   },
 
   restoreVersion: (versionId: string) => {
@@ -100,14 +123,17 @@ export const useVersionStore = create<VersionState>((set, get) => ({
   },
 
   removeVersion: (versionId: string) => {
-    set((state) => {
-      const versions = state.versions.filter((v) => v.id !== versionId);
-      saveVersions(versions);
-      return { versions };
-    });
+    set((state) => ({
+      versions: state.versions.filter((v) => v.id !== versionId),
+    }));
+
+    supabase.from('schema_versions').delete().eq('id', versionId).then();
   },
 
   getVersions: (workspaceId: string) => {
     return get().versions.filter((v) => v.workspaceId === workspaceId);
   },
 }));
+
+// Fetch versions on app start
+useVersionStore.getState().fetchVersions();

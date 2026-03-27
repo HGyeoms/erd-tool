@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Schema } from '../types/schema';
+import { supabase } from '../lib/supabase';
 
-const STORAGE_KEY = 'erd-tool-workspaces';
 const WORKSPACE_COLORS = [
   '#2563eb',
   '#14b8a6',
@@ -25,91 +25,48 @@ export interface Workspace {
 interface WorkspaceState {
   currentWorkspaceId: string | null;
   workspaces: Workspace[];
+  loading: boolean;
   openWorkspace: (id: string) => void;
   closeWorkspace: () => void;
   addWorkspace: (name: string, description: string) => Workspace;
   removeWorkspace: (id: string) => void;
   updateWorkspaceSchema: (id: string, schema: Schema) => void;
+  fetchWorkspaces: () => Promise<void>;
 }
 
-function loadFromStorage(): Workspace[] {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(isWorkspaceLike).map(normalizeWorkspace);
-  } catch {
-    return [];
-  }
-}
-
-function saveToStorage(workspaces: Workspace[]) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(workspaces));
-  } catch {
-    // ignore storage errors
-  }
-}
-
-function isWorkspaceLike(value: unknown): value is Partial<Workspace> & {
-  id: string;
-  name: string;
-} {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const candidate = value as Record<string, unknown>;
-  return typeof candidate.id === 'string' && typeof candidate.name === 'string';
-}
-
-function normalizeWorkspace(workspace: Partial<Workspace> & { id: string; name: string }): Workspace {
+function rowToWorkspace(row: any): Workspace {
   return {
-    id: workspace.id,
-    name: workspace.name,
-    description: workspace.description ?? '',
-    color: workspace.color ?? WORKSPACE_COLORS[0],
+    id: row.id,
+    name: row.name,
+    description: row.description ?? '',
+    color: row.color ?? WORKSPACE_COLORS[0],
     schema:
-      workspace.schema &&
-      Array.isArray(workspace.schema.tables) &&
-      Array.isArray(workspace.schema.relationships)
-        ? workspace.schema
+      row.schema &&
+      Array.isArray(row.schema.tables) &&
+      Array.isArray(row.schema.relationships)
+        ? row.schema
         : EMPTY_SCHEMA,
-    createdAt: workspace.createdAt ?? new Date(0).toISOString(),
+    createdAt: row.created_at ?? new Date(0).toISOString(),
   };
 }
-
-function createWorkspace(name: string, description: string, index: number): Workspace {
-  return {
-    id: crypto.randomUUID(),
-    name,
-    description,
-    color: WORKSPACE_COLORS[index % WORKSPACE_COLORS.length],
-    schema: EMPTY_SCHEMA,
-    createdAt: new Date().toISOString(),
-  };
-}
-
-const initialWorkspaces = loadFromStorage();
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   currentWorkspaceId: null,
-  workspaces: initialWorkspaces,
+  workspaces: [],
+  loading: true,
+
+  fetchWorkspaces: async () => {
+    const { data, error } = await supabase
+      .from('workspaces')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      set({ workspaces: data.map(rowToWorkspace), loading: false });
+    } else {
+      set({ loading: false });
+    }
+  },
 
   openWorkspace: (id: string) => {
     set({ currentWorkspaceId: id });
@@ -120,19 +77,40 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 
   addWorkspace: (name: string, description: string) => {
-    const workspace = createWorkspace(name, description, get().workspaces.length);
-    const workspaces = [workspace, ...get().workspaces];
-    saveToStorage(workspaces);
-    set({ workspaces });
+    const id = crypto.randomUUID();
+    const color = WORKSPACE_COLORS[get().workspaces.length % WORKSPACE_COLORS.length];
+    const workspace: Workspace = {
+      id,
+      name,
+      description,
+      color,
+      schema: EMPTY_SCHEMA,
+      createdAt: new Date().toISOString(),
+    };
+
+    set((state) => ({ workspaces: [workspace, ...state.workspaces] }));
+
+    supabase
+      .from('workspaces')
+      .insert({
+        id,
+        name,
+        description,
+        color,
+        schema: EMPTY_SCHEMA,
+        created_at: workspace.createdAt,
+      })
+      .then();
+
     return workspace;
   },
 
   removeWorkspace: (id: string) =>
     set((state) => {
-      const workspaces = state.workspaces.filter((workspace) => workspace.id !== id);
-      saveToStorage(workspaces);
+      supabase.from('workspaces').delete().eq('id', id).then();
+
       return {
-        workspaces,
+        workspaces: state.workspaces.filter((workspace) => workspace.id !== id),
         currentWorkspaceId:
           state.currentWorkspaceId === id ? null : state.currentWorkspaceId,
       };
@@ -140,10 +118,19 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   updateWorkspaceSchema: (id: string, schema: Schema) =>
     set((state) => {
-      const workspaces = state.workspaces.map((workspace) =>
-        workspace.id === id ? { ...workspace, schema } : workspace
-      );
-      saveToStorage(workspaces);
-      return { workspaces };
+      supabase
+        .from('workspaces')
+        .update({ schema })
+        .eq('id', id)
+        .then();
+
+      return {
+        workspaces: state.workspaces.map((workspace) =>
+          workspace.id === id ? { ...workspace, schema } : workspace
+        ),
+      };
     }),
 }));
+
+// Fetch workspaces on app start
+useWorkspaceStore.getState().fetchWorkspaces();
