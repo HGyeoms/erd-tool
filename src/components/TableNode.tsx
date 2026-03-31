@@ -3,12 +3,8 @@ import { Handle, Position, type NodeProps } from '@xyflow/react';
 import type { Table } from '../types/schema';
 import { useSchemaStore } from '../store/schema-store';
 
-const TABLE_COLORS = [
-  '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#f97316',
-];
-
 function getColor(color?: string) {
-  return color || TABLE_COLORS[0];
+  return color || '#3b82f6';
 }
 
 type TableNodeData = Table & { selected?: boolean };
@@ -46,8 +42,15 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
   );
 
   const accentColor = getColor(table.color);
-  const pkColumns = table.columns.filter((c) => c.isPrimaryKey);
-  const isCompositeKey = pkColumns.length > 1;
+  const compositeKeys = table.compositeKeys || [];
+
+  // Build a set of column IDs that are part of any composite key
+  const compositeColumnIds = new Set<string>();
+  for (const ck of compositeKeys) {
+    for (const colId of ck.columnIds) {
+      compositeColumnIds.add(colId);
+    }
+  }
 
   return (
     <div
@@ -86,18 +89,15 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
             table.name
           )}
         </div>
-        {isCompositeKey && (
-          <span className="text-[9px] font-bold text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded flex items-center gap-1 whitespace-nowrap">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-            </svg>
-            CPK ({pkColumns.length})
+        {compositeKeys.length > 0 && (
+          <span className="text-[9px] font-bold text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded whitespace-nowrap">
+            IDX {compositeKeys.length}
           </span>
         )}
       </div>
 
       {/* Columns */}
-      <div className="py-2 rounded-b-2xl" style={{ background: 'var(--bg-secondary)' }}>
+      <div className="py-2" style={{ background: 'var(--bg-secondary)' }}>
         {table.columns.length === 0 && (
           <div className="px-4 py-4 text-sm italic text-center opacity-60" style={{ color: 'var(--text-muted)' }}>No columns defined</div>
         )}
@@ -105,12 +105,13 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
           <div key={col.id} className="relative flex items-center gap-2 px-5 py-2.5 group" style={{ ['--tw-bg-opacity' as string]: 0 }}>
             <Handle type="target" position={Position.Left} id={`${col.id}-target`} className="!w-3 !h-3 !bg-blue-500 !border-2 !-left-[7px]" style={{ borderColor: 'var(--bg-secondary)' }} />
             {col.isPrimaryKey && (
-              <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${isCompositeKey ? 'text-orange-400 bg-orange-400/10' : 'text-yellow-400 bg-yellow-400/10'}`}>
-                {isCompositeKey ? 'CPK' : 'PK'}
-              </span>
+              <span className="text-[9px] font-bold text-yellow-400 bg-yellow-400/10 px-1 py-0.5 rounded">PK</span>
             )}
             {col.isForeignKey && (
               <span className="text-[9px] font-bold text-cyan-400 bg-cyan-400/10 px-1 py-0.5 rounded">FK</span>
+            )}
+            {compositeColumnIds.has(col.id) && (
+              <span className="text-[9px] font-bold text-orange-400 bg-orange-400/10 px-1 py-0.5 rounded">CK</span>
             )}
             <span className="flex-1 text-sm font-medium truncate" style={{ color: 'var(--text-secondary)' }}>{col.name}</span>
             {col.isUnique && (
@@ -124,6 +125,26 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
           </div>
         ))}
       </div>
+
+      {/* Composite Keys / Indexes */}
+      {compositeKeys.length > 0 && (
+        <div className="border-t px-4 py-2 rounded-b-2xl" style={{ borderColor: 'var(--border)', background: 'var(--bg-secondary)' }}>
+          {compositeKeys.map((ck) => {
+            const colNames = ck.columnIds
+              .map((cid) => table.columns.find((c) => c.id === cid)?.name)
+              .filter(Boolean);
+            const typeColor = ck.type === 'PRIMARY' ? 'text-yellow-400 bg-yellow-400/10' : ck.type === 'UNIQUE' ? 'text-purple-400 bg-purple-400/10' : 'text-orange-400 bg-orange-400/10';
+            return (
+              <div key={ck.id} className="flex items-center gap-1.5 py-1">
+                <span className={`text-[8px] font-bold px-1 py-0.5 rounded ${typeColor}`}>{ck.type}</span>
+                <span className="text-[10px] font-mono truncate" style={{ color: 'var(--text-muted)' }}>
+                  ({colNames.join(', ')})
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

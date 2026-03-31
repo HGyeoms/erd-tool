@@ -28,6 +28,20 @@ export function exportDDL(schema: Schema, dialect: Dialect): string {
         statements.push(`CREATE INDEX ${quote(`idx_${table.name}_${col.name}`)} ON ${quote(table.name)} (${quote(col.name)});`);
       }
     }
+    // Generate composite key / index statements
+    for (const ck of table.compositeKeys || []) {
+      const colNames = ck.columnIds
+        .map((cid) => table.columns.find((c) => c.id === cid)?.name)
+        .filter((n): n is string => !!n)
+        .map((n) => quote(n));
+      if (colNames.length === 0) continue;
+      if (ck.type === 'PRIMARY') {
+        // Primary is already handled inside CREATE TABLE
+        continue;
+      }
+      const unique = ck.type === 'UNIQUE' ? 'UNIQUE ' : '';
+      statements.push(`CREATE ${unique}INDEX ${quote(ck.name)} ON ${quote(table.name)} (${colNames.join(', ')});`);
+    }
     // Generate COMMENT statements (PostgreSQL)
     if (dialect === 'postgresql') {
       if (table.comment) {
@@ -66,6 +80,19 @@ function generateCreateTable(table: Table, schema: Schema, dialect: Dialect): st
   if (pkColumns.length > 0) {
     const pkNames = pkColumns.map((c) => quote(c.name)).join(', ');
     lines.push(`  PRIMARY KEY (${pkNames})`);
+  }
+
+  // Composite PRIMARY KEY from compositeKeys
+  for (const ck of table.compositeKeys || []) {
+    if (ck.type === 'PRIMARY') {
+      const colNames = ck.columnIds
+        .map((cid) => table.columns.find((c) => c.id === cid)?.name)
+        .filter((n): n is string => !!n)
+        .map((n) => quote(n));
+      if (colNames.length > 0 && pkColumns.length === 0) {
+        lines.push(`  PRIMARY KEY (${colNames.join(', ')})`);
+      }
+    }
   }
 
   // Unique constraints

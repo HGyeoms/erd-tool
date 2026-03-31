@@ -1,4 +1,4 @@
-import type { Schema, Table, Column, Relationship, EnumType } from '../types/schema';
+import type { Schema, Table, Column, Relationship, EnumType, CompositeKey } from '../types/schema';
 
 /**
  * Parse DDL SQL (CREATE TABLE statements) into a Schema.
@@ -110,6 +110,37 @@ export function parseDDL(sql: string): Schema {
               });
             }
           }
+        }
+      }
+    }
+
+    // Parse CREATE INDEX statements
+    // e.g. CREATE INDEX "IDX_xxx" ON public.table_name USING btree ("col1", "col2");
+    // e.g. CREATE UNIQUE INDEX idx_name ON table_name (col1, col2);
+    const createIndexRegex = /CREATE\s+(UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:`([^`]+)`|"([^"]+)"|(\w+))\s+ON\s+(?:`([^`]+)`|"([^"]+)"|(\w+(?:\.\w+)?))\s*(?:USING\s+\w+\s*)?\(([^)]+)\)/gi;
+    let idxMatch: RegExpExecArray | null;
+    while ((idxMatch = createIndexRegex.exec(cleaned)) !== null) {
+      const isUnique = !!idxMatch[1];
+      const indexName = idxMatch[2] || idxMatch[3] || idxMatch[4];
+      const onTable = (idxMatch[5] || idxMatch[6] || idxMatch[7]).replace(/^(?:\w+\.)/, '');
+      const colsStr = idxMatch[8];
+      const colNames = colsStr.split(',').map((c) => stripQuotes(c.trim()));
+
+      const table = tableMap.get(onTable.toLowerCase());
+      if (table) {
+        const columnIds = colNames
+          .map((name) => table.columns.find((c) => c.name.toLowerCase() === name.toLowerCase())?.id)
+          .filter((id): id is string => !!id);
+
+        if (columnIds.length > 0) {
+          const ck: CompositeKey = {
+            id: crypto.randomUUID(),
+            name: indexName,
+            type: isUnique ? 'UNIQUE' : 'INDEX',
+            columnIds,
+          };
+          if (!table.compositeKeys) table.compositeKeys = [];
+          table.compositeKeys.push(ck);
         }
       }
     }

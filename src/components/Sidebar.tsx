@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSchemaStore } from '../store/schema-store';
-import type { Column, EnumType } from '../types/schema';
+import type { Column, EnumType, CompositeKey } from '../types/schema';
 
 const SQL_TYPES = [
   'INTEGER', 'BIGINT', 'SMALLINT', 'SERIAL', 'BIGSERIAL',
@@ -28,6 +28,9 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
   const addEnum = useSchemaStore((s) => s.addEnum);
   const updateEnum = useSchemaStore((s) => s.updateEnum);
   const removeEnum = useSchemaStore((s) => s.removeEnum);
+  const addCompositeKey = useSchemaStore((s) => s.addCompositeKey);
+  const updateCompositeKey = useSchemaStore((s) => s.updateCompositeKey);
+  const removeCompositeKey = useSchemaStore((s) => s.removeCompositeKey);
 
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
   const [tableListCollapsed, setTableListCollapsed] = useState(false);
@@ -343,6 +346,45 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
               </div>
             )}
 
+            {/* Composite Keys / Indexes */}
+            <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
+                  Indexes ({(selectedTable.compositeKeys || []).length})
+                </span>
+                <button
+                  className="text-[11px] text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
+                  onClick={() => {
+                    const id = `ck-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+                    addCompositeKey(selectedTable.id, {
+                      id,
+                      name: `idx_${selectedTable.name}_${(selectedTable.compositeKeys || []).length + 1}`,
+                      type: 'INDEX',
+                      columnIds: [],
+                    });
+                  }}
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(selectedTable.compositeKeys || []).map((ck) => (
+                  <CompositeKeyEditor
+                    key={ck.id}
+                    compositeKey={ck}
+                    tableId={selectedTable.id}
+                    columns={selectedTable.columns}
+                    updateCompositeKey={updateCompositeKey}
+                    removeCompositeKey={removeCompositeKey}
+                  />
+                ))}
+              </div>
+            </div>
+
             {/* Delete table */}
             <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
               <button
@@ -632,6 +674,87 @@ function EnumEditor({
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function CompositeKeyEditor({
+  compositeKey,
+  tableId,
+  columns,
+  updateCompositeKey,
+  removeCompositeKey,
+}: {
+  compositeKey: CompositeKey;
+  tableId: string;
+  columns: Column[];
+  updateCompositeKey: (tableId: string, keyId: string, updates: Partial<Omit<CompositeKey, 'id'>>) => void;
+  removeCompositeKey: (tableId: string, keyId: string) => void;
+}) {
+  const toggleColumn = (colId: string) => {
+    const current = compositeKey.columnIds;
+    const next = current.includes(colId)
+      ? current.filter((id) => id !== colId)
+      : [...current, colId];
+    updateCompositeKey(tableId, compositeKey.id, { columnIds: next });
+  };
+
+  return (
+    <div className="rounded-md p-2.5 border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-light)' }}>
+      {/* Name */}
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <input
+          className="flex-1 bg-transparent text-xs outline-none border-b border-transparent focus:border-gray-600 transition-colors"
+          style={{ color: 'var(--text-primary)' }}
+          value={compositeKey.name}
+          onChange={(e) => updateCompositeKey(tableId, compositeKey.id, { name: e.target.value })}
+          placeholder="index_name"
+        />
+        <button
+          className="text-gray-600 hover:text-red-400 transition-all p-0.5"
+          onClick={() => removeCompositeKey(tableId, compositeKey.id)}
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Type selector */}
+      <div className="flex items-center gap-1 mb-1.5">
+        {(['INDEX', 'UNIQUE', 'PRIMARY'] as const).map((t) => (
+          <button
+            key={t}
+            className={`text-[10px] font-medium px-1.5 py-0.5 rounded transition-all ${
+              compositeKey.type === t
+                ? t === 'PRIMARY' ? 'text-yellow-400 bg-yellow-400/15 ring-1 ring-yellow-400/30'
+                : t === 'UNIQUE' ? 'text-purple-400 bg-purple-400/15 ring-1 ring-purple-400/30'
+                : 'text-orange-400 bg-orange-400/15 ring-1 ring-orange-400/30'
+                : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'
+            }`}
+            onClick={() => updateCompositeKey(tableId, compositeKey.id, { type: t })}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {/* Column selection */}
+      <div className="space-y-0.5">
+        {columns.map((col) => (
+          <label key={col.id} className="flex items-center gap-1.5 cursor-pointer text-[11px] py-0.5" style={{ color: 'var(--text-muted)' }}>
+            <input
+              type="checkbox"
+              checked={compositeKey.columnIds.includes(col.id)}
+              onChange={() => toggleColumn(col.id)}
+              className="rounded border-gray-600 text-orange-500 focus:ring-orange-500/30 w-3 h-3"
+              style={{ background: 'var(--bg-secondary)' }}
+            />
+            <span className={compositeKey.columnIds.includes(col.id) ? 'text-orange-400' : ''}>{col.name}</span>
+          </label>
+        ))}
+      </div>
     </div>
   );
 }

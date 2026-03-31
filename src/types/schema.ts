@@ -12,10 +12,18 @@ export interface Column {
   comment?: string;
 }
 
+export interface CompositeKey {
+  id: string;
+  name: string;
+  type: 'INDEX' | 'UNIQUE' | 'PRIMARY';
+  columnIds: string[];
+}
+
 export interface Table {
   id: string;
   name: string;
   columns: Column[];
+  compositeKeys?: CompositeKey[];
   position: { x: number; y: number };
   color?: string;
   comment?: string;

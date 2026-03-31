@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { temporal } from 'zundo';
-import type { Schema, Table, Column, Relationship, EnumType, TableGroup } from '../types/schema';
+import type { Schema, Table, Column, Relationship, EnumType, TableGroup, CompositeKey } from '../types/schema';
 
 const STORAGE_KEY = 'erd-tool-schema';
 
@@ -42,6 +42,9 @@ export interface SchemaState extends Schema {
   addEnum: (enumType: EnumType) => void;
   updateEnum: (enumId: string, updates: Partial<Omit<EnumType, 'id'>>) => void;
   removeEnum: (enumId: string) => void;
+  addCompositeKey: (tableId: string, compositeKey: CompositeKey) => void;
+  updateCompositeKey: (tableId: string, keyId: string, updates: Partial<Omit<CompositeKey, 'id'>>) => void;
+  removeCompositeKey: (tableId: string, keyId: string) => void;
   addGroup: (group: TableGroup) => void;
   updateGroup: (groupId: string, updates: Partial<Omit<TableGroup, 'id'>>) => void;
   removeGroup: (groupId: string) => void;
@@ -217,6 +220,48 @@ export const useSchemaStore = create<SchemaState>()(
         set((state) => {
           const next = {
             enums: (state.enums || []).filter((e) => e.id !== enumId),
+          };
+          persist({ ...state, ...next });
+          return next;
+        }),
+
+      addCompositeKey: (tableId: string, compositeKey: CompositeKey) =>
+        set((state) => {
+          const next = {
+            tables: state.tables.map((t) =>
+              t.id === tableId ? { ...t, compositeKeys: [...(t.compositeKeys || []), compositeKey] } : t
+            ),
+          };
+          persist({ ...state, ...next });
+          return next;
+        }),
+
+      updateCompositeKey: (tableId: string, keyId: string, updates: Partial<Omit<CompositeKey, 'id'>>) =>
+        set((state) => {
+          const next = {
+            tables: state.tables.map((t) =>
+              t.id === tableId
+                ? {
+                    ...t,
+                    compositeKeys: (t.compositeKeys || []).map((k) =>
+                      k.id === keyId ? { ...k, ...updates } : k
+                    ),
+                  }
+                : t
+            ),
+          };
+          persist({ ...state, ...next });
+          return next;
+        }),
+
+      removeCompositeKey: (tableId: string, keyId: string) =>
+        set((state) => {
+          const next = {
+            tables: state.tables.map((t) =>
+              t.id === tableId
+                ? { ...t, compositeKeys: (t.compositeKeys || []).filter((k) => k.id !== keyId) }
+                : t
+            ),
           };
           persist({ ...state, ...next });
           return next;
