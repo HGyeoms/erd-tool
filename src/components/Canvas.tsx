@@ -281,10 +281,9 @@ export function Canvas({ onSelectTable }: CanvasProps) {
   );
 
   const isHandMode = mode === 'hand';
-  const mouseCursor = `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='32' viewBox='0 0 24 32'><rect x='4' y='1' width='16' height='28' rx='8' fill='white' stroke='black' stroke-width='2'/><line x1='12' y1='1' x2='12' y2='13' stroke='black' stroke-width='2'/></svg>") 12 14, default`;
 
   return (
-    <div className="w-full h-full relative" style={{ cursor: isHandMode ? 'grab' : mouseCursor }}>
+    <div className={`w-full h-full relative ${isHandMode ? 'canvas-hand-mode' : 'canvas-select-mode'}`}>
       <ReactFlow
         nodes={localNodes}
         edges={edges}
