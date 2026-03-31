@@ -6,8 +6,8 @@ interface ShortcutsPanelProps {
 
 const SHORTCUTS = [
   { category: 'Mode', items: [
-    { keys: ['V'], description: 'Select mode' },
-    { keys: ['H'], description: 'Hand (pan) mode' },
+    { keys: ['V', 'ㅍ'], description: 'Select mode' },
+    { keys: ['H', 'ㅗ'], description: 'Hand (pan) mode' },
   ]},
   { category: 'Edit', items: [
     { keys: ['⌘', 'Z'], description: 'Undo' },

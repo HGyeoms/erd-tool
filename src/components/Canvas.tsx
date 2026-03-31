@@ -99,9 +99,9 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-      if (e.key === 'v' || e.key === 'V') {
+      if (e.key === 'v' || e.key === 'V' || e.key === 'ㅍ') {
         setMode('select');
-      } else if (e.key === 'h' || e.key === 'H') {
+      } else if (e.key === 'h' || e.key === 'H' || e.key === 'ㅗ') {
         setMode('hand');
       }
     };
