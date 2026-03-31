@@ -68,9 +68,24 @@ export function parseDDL(sql: string): Schema {
         }
       }
 
-      // Apply table-level UNIQUE (just informational, no special field yet)
-      // We track it but don't have a field for it currently
-      void tableUniques;
+      // Apply table-level UNIQUE constraints as CompositeKeys
+      for (const uq of tableUniques) {
+        const columnIds = uq.columns
+          .map((name) => table.columns.find((c) => c.name.toLowerCase() === name.toLowerCase())?.id)
+          .filter((id): id is string => !!id);
+        if (columnIds.length > 1) {
+          if (!table.compositeKeys) table.compositeKeys = [];
+          table.compositeKeys.push({
+            id: crypto.randomUUID(),
+            name: uq.name || `uq_${table.name}_${uq.columns.join('_')}`,
+            type: 'UNIQUE',
+            columnIds,
+          });
+        } else if (columnIds.length === 1) {
+          const col = table.columns.find((c) => c.id === columnIds[0]);
+          if (col) col.isUnique = true;
+        }
+      }
 
       tableMap.set(tableName.toLowerCase(), table);
       tables.push(table);
@@ -132,7 +147,8 @@ export function parseDDL(sql: string): Schema {
           .map((name) => table.columns.find((c) => c.name.toLowerCase() === name.toLowerCase())?.id)
           .filter((id): id is string => !!id);
 
-        if (columnIds.length > 0) {
+        if (columnIds.length > 1) {
+          // Multi-column index → CompositeKey
           const ck: CompositeKey = {
             id: crypto.randomUUID(),
             name: indexName,
@@ -141,6 +157,13 @@ export function parseDDL(sql: string): Schema {
           };
           if (!table.compositeKeys) table.compositeKeys = [];
           table.compositeKeys.push(ck);
+        } else if (columnIds.length === 1) {
+          // Single-column index → set isIndexed flag
+          const col = table.columns.find((c) => c.id === columnIds[0]);
+          if (col) {
+            if (isUnique) col.isUnique = true;
+            else col.isIndexed = true;
+          }
         }
       }
     }
@@ -158,18 +181,23 @@ interface FKDef {
   refColumn: string;
 }
 
+interface ParsedUniqueConstraint {
+  name?: string;
+  columns: string[];
+}
+
 interface ParsedBody {
   columns: Column[];
   tablePKs: string[];
   tableFKs: FKDef[];
-  tableUniques: string[][];
+  tableUniques: ParsedUniqueConstraint[];
 }
 
 function parseTableBody(body: string): ParsedBody {
   const columns: Column[] = [];
   const tablePKs: string[] = [];
   const tableFKs: FKDef[] = [];
-  const tableUniques: string[][] = [];
+  const tableUniques: ParsedUniqueConstraint[] = [];
 
   // Split by comma, but respect parentheses depth
   const parts = splitByComma(body);
@@ -178,8 +206,8 @@ function parseTableBody(body: string): ParsedBody {
     const trimmed = part.trim();
     if (!trimmed) continue;
 
-    // Table-level PRIMARY KEY
-    if (/^PRIMARY\s+KEY/i.test(trimmed)) {
+    // Table-level PRIMARY KEY (with optional CONSTRAINT prefix)
+    if (/^(?:CONSTRAINT\s+(?:`[^`]+`|"[^"]+"|[\w"]+)\s+)?PRIMARY\s+KEY/i.test(trimmed)) {
       const pkMatch = trimmed.match(/PRIMARY\s+KEY\s*\(([^)]+)\)/i);
       if (pkMatch) {
         const pkCols = pkMatch[1].split(',').map((c) => stripQuotes(c.trim()));
@@ -203,11 +231,13 @@ function parseTableBody(body: string): ParsedBody {
     }
 
     // Table-level UNIQUE
-    if (/^(?:CONSTRAINT\s+\S+\s+)?UNIQUE/i.test(trimmed)) {
+    if (/^(?:CONSTRAINT\s+(?:`[^`]+`|"[^"]+"|[\w"]+)\s+)?UNIQUE/i.test(trimmed)) {
+      const nameMatch = trimmed.match(/^CONSTRAINT\s+(?:`([^`]+)`|"([^"]+)"|(\w+))/i);
+      const constraintName = nameMatch ? (nameMatch[1] || nameMatch[2] || nameMatch[3]) : undefined;
       const uqMatch = trimmed.match(/UNIQUE\s*(?:KEY\s*(?:\S+\s*)?)?\(([^)]+)\)/i);
       if (uqMatch) {
         const uqCols = uqMatch[1].split(',').map((c) => stripQuotes(c.trim()));
-        tableUniques.push(uqCols);
+        tableUniques.push({ name: constraintName, columns: uqCols });
       }
       continue;
     }
