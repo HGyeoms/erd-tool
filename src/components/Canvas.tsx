@@ -337,8 +337,8 @@ export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
           onClick={() => setMode('select')}
           title="Select mode (V)"
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M4 4l7.07 17 2.51-7.39L21 11.07z" />
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+            <path d="M4 0L4 20L8.5 15.5L12.5 23L15.5 21.5L11.5 13.5L18 13.5L4 0Z" />
           </svg>
           <span>V</span>
         </button>
