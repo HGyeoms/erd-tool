@@ -14,7 +14,8 @@ function getColor(color?: string) {
 type TableNodeData = Table & { selected?: boolean };
 
 function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeData }) {
-  const table = data as TableNodeData;
+  const tableFromStore = useSchemaStore((s) => s.tables.find((t) => t.id === data.id));
+  const table = tableFromStore || (data as TableNodeData);
   const updateTable = useSchemaStore((s) => s.updateTable);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(table.name);
@@ -45,8 +46,8 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
   );
 
   const accentColor = getColor(table.color);
-  const pkCount = table.columns.filter((c) => c.isPrimaryKey).length;
-  const isCompositeKey = pkCount > 1;
+  const pkColumns = table.columns.filter((c) => c.isPrimaryKey);
+  const isCompositeKey = pkColumns.length > 1;
 
   return (
     <div
@@ -85,6 +86,14 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
             table.name
           )}
         </div>
+        {isCompositeKey && (
+          <span className="text-[9px] font-bold text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded flex items-center gap-1 whitespace-nowrap">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+            </svg>
+            CPK ({pkColumns.length})
+          </span>
+        )}
       </div>
 
       {/* Columns */}
