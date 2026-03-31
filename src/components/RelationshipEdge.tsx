@@ -15,15 +15,6 @@ const REL_TYPES: Array<'1:1' | '1:N' | 'N:M'> = ['1:1', '1:N', 'N:M'];
  * - "one-and-only-one": double vertical line (||)
  */
 
-/** Draw a "one" marker: single vertical bar */
-function OneMarker({ x, y, angle, color, width }: { x: number; y: number; angle: number; color: string; width: number }) {
-  return (
-    <g transform={`translate(${x}, ${y}) rotate(${angle})`}>
-      <line x1={8} y1={-7} x2={8} y2={7} stroke={color} strokeWidth={width} strokeLinecap="round" />
-    </g>
-  );
-}
-
 /** Draw a "one-and-only-one" marker: double vertical bar */
 function ExactlyOneMarker({ x, y, angle, color, width }: { x: number; y: number; angle: number; color: string; width: number }) {
   return (

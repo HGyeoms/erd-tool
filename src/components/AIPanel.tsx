@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSchemaStore } from '../store/schema-store';
 import { parseSchemaCommand, applyActions } from '../lib/ai-schema-parser';
-import { generateFullMigration, generateDiffMigration } from '../lib/migration-generator';
+import { generateFullMigration } from '../lib/migration-generator';
 import type { Schema } from '../types/schema';
 
 interface Message {

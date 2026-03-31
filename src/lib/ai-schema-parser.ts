@@ -80,7 +80,7 @@ function parseColumnDef(raw: string): Partial<Column> {
  * Parse natural language into schema actions.
  * Handles Korean and English commands.
  */
-export function parseSchemaCommand(input: string, schema: Schema): SchemaAction[] {
+export function parseSchemaCommand(input: string, _schema: Schema): SchemaAction[] {
   const actions: SchemaAction[] = [];
   const lower = input.toLowerCase().trim();
 

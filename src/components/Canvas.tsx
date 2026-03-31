@@ -78,13 +78,12 @@ interface CanvasProps {
   onSelectTable: (id: string | null) => void;
 }
 
-export function Canvas({ selectedTableId, onSelectTable }: CanvasProps) {
+export function Canvas({ onSelectTable }: CanvasProps) {
   const tables = useSchemaStore((s) => s.tables);
   const relationships = useSchemaStore((s) => s.relationships);
   const groups = useSchemaStore((s) => s.groups) || [];
   const updateTablePosition = useSchemaStore((s) => s.updateTablePosition);
   const updateGroup = useSchemaStore((s) => s.updateGroup);
-  const addGroup = useSchemaStore((s) => s.addGroup);
   const removeGroup = useSchemaStore((s) => s.removeGroup);
   const addRelationship = useSchemaStore((s) => s.addRelationship);
   const addTable = useSchemaStore((s) => s.addTable);
