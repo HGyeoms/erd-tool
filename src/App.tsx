@@ -77,7 +77,7 @@ function App() {
   const handleOpenWorkspace = useCallback(
     (id: string) => {
       openWorkspace(id);
-      window.history.pushState({ workspaceId: id }, '', `#workspace/${id}`);
+      window.history.pushState({ workspaceId: id }, '', `#database/${id}`);
     },
     [openWorkspace]
   );
@@ -122,7 +122,7 @@ function App() {
           const ws = useWorkspaceStore.getState().addWorkspace('Shared Schema', 'Imported from shared link');
           useWorkspaceStore.getState().updateWorkspaceSchema(ws.id, schema);
           openWorkspace(ws.id);
-          window.history.replaceState({ workspaceId: ws.id }, '', `#workspace/${ws.id}`);
+          window.history.replaceState({ workspaceId: ws.id }, '', `#database/${ws.id}`);
         })
         .catch(() => {
           // Invalid share link, go to home
@@ -131,7 +131,7 @@ function App() {
       return;
     }
 
-    const match = hash.match(/^#workspace\/(.+)$/);
+    const match = hash.match(/^#(?:database|workspace)\/(.+)$/);
     if (match) {
       const id = match[1];
       const exists = useWorkspaceStore.getState().workspaces.some((w) => w.id === id);

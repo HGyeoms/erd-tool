@@ -35,7 +35,7 @@ export function Home({ onOpenWorkspace }: HomeProps) {
                 <line x1="10" y1="3" x2="10" y2="21" />
               </svg>
             </div>
-            <h1 className="text-lg font-bold tracking-tight sm:text-xl" style={{ color: 'var(--text-primary)' }}>My Workspaces</h1>
+            <h1 className="text-lg font-bold tracking-tight sm:text-xl" style={{ color: 'var(--text-primary)' }}>My Databases</h1>
           </div>
           <div className="flex items-center gap-2">
           <button
@@ -78,14 +78,14 @@ export function Home({ onOpenWorkspace }: HomeProps) {
           {loading ? (
             <div className="flex flex-col items-center gap-3">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-              <span className="text-sm text-gray-500">Loading workspaces...</span>
+              <span className="text-sm text-gray-500">Loading databases...</span>
             </div>
           ) : (
           <div>
             {workspaces.length > 0 && (
               <div className="mb-6 text-center sm:mb-8">
                 <p className="text-sm text-gray-500">
-                  Choose a workspace to continue, or start a fresh ERD.
+                  Choose a database to continue, or start a fresh ERD.
                 </p>
               </div>
             )}
@@ -118,7 +118,7 @@ export function Home({ onOpenWorkspace }: HomeProps) {
                   </div>
                   <div className="text-center">
                     <span className="block text-base font-bold text-gray-400 transition-colors group-hover:text-blue-400">
-                      Add Workspace
+                      Add Database
                     </span>
                     <span className="mt-1 block text-[11px] uppercase tracking-widest text-gray-600">
                       New project
@@ -138,7 +138,7 @@ export function Home({ onOpenWorkspace }: HomeProps) {
                 </div>
                 <h2 className="text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: 'var(--text-primary)' }}>Start your first ERD</h2>
                 <p className="mt-3 max-w-md text-sm leading-relaxed text-gray-500 sm:text-base">
-                  Create a workspace to visually design and organize your database schema.
+                  Create a database to visually design and organize your schema.
                 </p>
                 <button
                   className="mt-8 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold uppercase tracking-widest text-white transition-all hover:bg-blue-500 active:scale-95"
@@ -148,7 +148,7 @@ export function Home({ onOpenWorkspace }: HomeProps) {
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
-                  Create Workspace
+                  Create Database
                 </button>
               </div>
             )}
@@ -233,7 +233,7 @@ function CreateModal({ onClose, onCreate }: { onClose: () => void; onCreate: (na
             onClick={handleSubmit}
             disabled={!name.trim()}
           >
-            Create Workspace
+            Create Database
           </button>
         </div>
       </div>
@@ -265,7 +265,7 @@ function WorkspaceCard({
   if (isDeleting) {
     return (
       <div className="flex min-h-[200px] w-[280px] flex-col items-center justify-center gap-5 rounded-2xl border border-red-500/40 p-8 text-center animate-in fade-in zoom-in sm:min-h-[220px]" style={{ background: 'var(--bg-tertiary)' }}>
-        <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Delete this workspace?</p>
+        <p className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Delete this database?</p>
         <div className="flex w-full gap-3">
           <button className="flex-1 rounded-xl bg-gray-800 py-2.5 text-sm font-bold text-gray-300 active:scale-95" onClick={(e) => { e.stopPropagation(); onCancelDelete(); }}>No</button>
           <button className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white shadow-lg active:scale-95" onClick={(e) => { e.stopPropagation(); onConfirmDelete(); }}>Yes</button>
@@ -283,7 +283,7 @@ function WorkspaceCard({
       <div className="p-6">
         <div className="mb-2.5 flex items-center gap-2">
           <div className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ background: ws.color, boxShadow: `0 0 10px ${ws.color}` }} />
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Workspace</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Database</span>
         </div>
         <h3
           className="text-sm font-semibold leading-snug"
