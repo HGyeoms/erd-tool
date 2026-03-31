@@ -34,8 +34,10 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
   const handleAddTable = () => {
     const id = `table-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const color = TABLE_COLORS[tables.length % TABLE_COLORS.length];
-    // Offset new tables so they don't stack
-    const offset = tables.length * 30;
+    const center = screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    });
     const table: Table = {
       id,
       name: `new_table_${tables.length + 1}`,
@@ -49,7 +51,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
           defaultValue: null,
         },
       ],
-      position: { x: 100 + offset, y: 100 + offset },
+      position: { x: center.x - 150, y: center.y - 50 },
       color,
     };
     addTable(table);
