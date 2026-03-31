@@ -45,6 +45,8 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
   );
 
   const accentColor = getColor(table.color);
+  const pkCount = table.columns.filter((c) => c.isPrimaryKey).length;
+  const isCompositeKey = pkCount > 1;
 
   return (
     <div
@@ -94,7 +96,9 @@ function TableNodeComponent({ data, selected }: NodeProps & { data: TableNodeDat
           <div key={col.id} className="relative flex items-center gap-2 px-5 py-2.5 group" style={{ ['--tw-bg-opacity' as string]: 0 }}>
             <Handle type="target" position={Position.Left} id={`${col.id}-target`} className="!w-3 !h-3 !bg-blue-500 !border-2 !-left-[7px]" style={{ borderColor: 'var(--bg-secondary)' }} />
             {col.isPrimaryKey && (
-              <span className="text-[9px] font-bold text-yellow-400 bg-yellow-400/10 px-1 py-0.5 rounded">PK</span>
+              <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${isCompositeKey ? 'text-orange-400 bg-orange-400/10' : 'text-yellow-400 bg-yellow-400/10'}`}>
+                {isCompositeKey ? 'CPK' : 'PK'}
+              </span>
             )}
             {col.isForeignKey && (
               <span className="text-[9px] font-bold text-cyan-400 bg-cyan-400/10 px-1 py-0.5 rounded">FK</span>
