@@ -29,6 +29,8 @@ function App() {
   const updateWorkspaceSchema = useWorkspaceStore((s) => s.updateWorkspaceSchema);
   const tables = useSchemaStore((s) => s.tables);
   const relationships = useSchemaStore((s) => s.relationships);
+  const enums = useSchemaStore((s) => s.enums);
+  const groups = useSchemaStore((s) => s.groups);
   const setSchema = useSchemaStore((s) => s.setSchema);
   const skipNextWorkspaceSaveRef = useRef<string | null>(null);
 
@@ -68,8 +70,8 @@ function App() {
       return;
     }
 
-    updateWorkspaceSchema(currentWorkspaceId, { tables, relationships });
-  }, [currentWorkspaceId, tables, relationships, updateWorkspaceSchema]);
+    updateWorkspaceSchema(currentWorkspaceId, { tables, relationships, enums, groups });
+  }, [currentWorkspaceId, tables, relationships, enums, groups, updateWorkspaceSchema]);
 
   const handleOpenWorkspace = useCallback(
     (id: string) => {
