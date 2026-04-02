@@ -46,13 +46,29 @@ function GroupNodeComponent({ data, selected }: NodeProps & { data: GroupNodeDat
         }}
       />
       <div
-        className="w-full h-full rounded-xl border-2 border-dashed"
+        className="w-full h-full rounded-xl border-2 border-dashed relative overflow-hidden"
         style={{
           borderColor: `${group.color}80`,
           background: `${group.color}10`,
         }}
         onDoubleClick={handleDoubleClick}
       >
+        {/* Center watermark label — visible when zoomed out */}
+        <div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+        >
+          <span
+            className="font-extrabold uppercase tracking-[0.15em] whitespace-nowrap"
+            style={{
+              color: `${group.color}18`,
+              fontSize: `${Math.max(32, (group.size?.width || 400) * 0.12)}px`,
+            }}
+          >
+            {group.name}
+          </span>
+        </div>
+
+        {/* Top badge label */}
         <div
           className="absolute -top-3 left-3 flex items-center gap-1.5 rounded-md px-2 py-0.5"
           style={{ background: `${group.color}20`, border: `1px solid ${group.color}40` }}
