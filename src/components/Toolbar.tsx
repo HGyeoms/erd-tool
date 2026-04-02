@@ -18,9 +18,10 @@ interface ToolbarProps {
   onSearch?: () => void;
   onShare?: () => void;
   onAI?: () => void;
+  onLayouts?: () => void;
 }
 
-export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onSearch, onShare, onAI }: ToolbarProps) {
+export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onSearch, onShare, onAI, onLayouts }: ToolbarProps) {
   const addTable = useSchemaStore((s) => s.addTable);
   const addGroup = useSchemaStore((s) => s.addGroup);
   const tables = useSchemaStore((s) => s.tables);
@@ -236,9 +237,22 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
         </>
       )}
 
-      {(onShare || onAI) && (
+      {(onShare || onAI || onLayouts) && (
         <>
           <div className="w-px h-6 mx-1" style={{ background: 'var(--border-light)' }} />
+          {onLayouts && (
+            <ToolbarButton
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2z" />
+                  <path d="M3 9h18" />
+                  <path d="M9 3v18" />
+                </svg>
+              }
+              label="Layouts"
+              onClick={onLayouts}
+            />
+          )}
           {onShare && (
             <ToolbarButton
               icon={

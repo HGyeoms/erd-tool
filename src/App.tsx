@@ -8,6 +8,7 @@ import { SearchBar } from './components/SearchBar';
 import { ShortcutsPanel } from './components/ShortcutsPanel';
 import { Home } from './components/Home';
 import { AIPanel } from './components/AIPanel';
+import { LayoutPanel } from './components/LayoutPanel';
 import { useSchemaStore } from './store/schema-store';
 import { useWorkspaceStore } from './store/workspace-store';
 import { encodeSchema, decodeSchema } from './lib/share';
@@ -20,6 +21,7 @@ function App() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [shareToast, setShareToast] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [showLayouts, setShowLayouts] = useState(false);
   const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const openWorkspace = useWorkspaceStore((s) => s.openWorkspace);
@@ -190,6 +192,7 @@ function App() {
           onSearch={() => setShowSearch((v) => !v)}
           onShare={handleShare}
           onAI={() => setShowAI((v) => !v)}
+          onLayouts={() => setShowLayouts(true)}
         />
 
         {/* Main Content */}
@@ -232,6 +235,14 @@ function App() {
 
         {/* AI Panel */}
         {showAI && <AIPanel onClose={() => setShowAI(false)} />}
+
+        {/* Layout Panel */}
+        {showLayouts && currentWorkspaceId && (
+          <LayoutPanel
+            workspaceId={currentWorkspaceId}
+            onClose={() => setShowLayouts(false)}
+          />
+        )}
 
         {/* Share Toast */}
         {shareToast && (
