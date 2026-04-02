@@ -17,11 +17,10 @@ interface ToolbarProps {
   workspaceName?: string;
   onSearch?: () => void;
   onShare?: () => void;
-  onVersions?: () => void;
   onAI?: () => void;
 }
 
-export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onSearch, onShare, onVersions, onAI }: ToolbarProps) {
+export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onSearch, onShare, onAI }: ToolbarProps) {
   const addTable = useSchemaStore((s) => s.addTable);
   const addGroup = useSchemaStore((s) => s.addGroup);
   const tables = useSchemaStore((s) => s.tables);
@@ -237,7 +236,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
         </>
       )}
 
-      {(onShare || onVersions) && (
+      {(onShare || onAI) && (
         <>
           <div className="w-px h-6 mx-1" style={{ background: 'var(--border-light)' }} />
           {onShare && (
@@ -253,18 +252,6 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
               }
               label="Share"
               onClick={onShare}
-            />
-          )}
-          {onVersions && (
-            <ToolbarButton
-              icon={
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-              }
-              label="Versions"
-              onClick={onVersions}
             />
           )}
           {onAI && (
