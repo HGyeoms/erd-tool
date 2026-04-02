@@ -48,16 +48,19 @@ function GroupNodeComponent({ data, selected }: NodeProps & { data: GroupNodeDat
       <div
         className="w-full h-full rounded-xl border-2 border-dashed"
         style={{
-          borderColor: `${group.color}60`,
-          background: `${group.color}08`,
+          borderColor: `${group.color}80`,
+          background: `${group.color}10`,
         }}
         onDoubleClick={handleDoubleClick}
       >
-        <div className="absolute top-2 left-3 flex items-center gap-1.5">
+        <div
+          className="absolute -top-3 left-3 flex items-center gap-1.5 rounded-md px-2 py-0.5"
+          style={{ background: `${group.color}20`, border: `1px solid ${group.color}40` }}
+        >
           <div className="w-2 h-2 rounded-full" style={{ background: group.color }} />
           {editing ? (
             <input
-              className="text-xs font-bold uppercase tracking-widest outline-none border-b px-1"
+              className="text-[11px] font-bold uppercase tracking-widest outline-none border-b px-1"
               style={{ color: group.color, borderColor: group.color, background: 'transparent' }}
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
@@ -66,7 +69,7 @@ function GroupNodeComponent({ data, selected }: NodeProps & { data: GroupNodeDat
               autoFocus
             />
           ) : (
-            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: group.color }}>
+            <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: group.color }}>
               {group.name}
             </span>
           )}
