@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Schema } from '../types/schema';
-import { supabase } from '../lib/supabase';
+import { localDB } from '../lib/local-db';
 
 const WORKSPACE_COLORS = [
   '#2563eb',
@@ -34,36 +34,29 @@ interface WorkspaceState {
   fetchWorkspaces: () => Promise<void>;
 }
 
-function rowToWorkspace(row: any): Workspace {
-  return {
-    id: row.id,
-    name: row.name,
-    description: row.description ?? '',
-    color: row.color ?? WORKSPACE_COLORS[0],
-    schema:
-      row.schema &&
-      Array.isArray(row.schema.tables) &&
-      Array.isArray(row.schema.relationships)
-        ? row.schema
-        : EMPTY_SCHEMA,
-    createdAt: row.created_at ?? new Date(0).toISOString(),
-  };
-}
-
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   currentWorkspaceId: null,
   workspaces: [],
   loading: true,
 
   fetchWorkspaces: async () => {
-    const { data, error } = await supabase
-      .from('workspaces')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      set({ workspaces: data.map(rowToWorkspace), loading: false });
-    } else {
+    try {
+      const rows = await localDB.getAll();
+      const workspaces: Workspace[] = rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description ?? '',
+        color: row.color ?? WORKSPACE_COLORS[0],
+        schema:
+          row.schema &&
+          Array.isArray(row.schema.tables) &&
+          Array.isArray(row.schema.relationships)
+            ? row.schema
+            : EMPTY_SCHEMA,
+        createdAt: row.created_at ?? new Date(0).toISOString(),
+      }));
+      set({ workspaces, loading: false });
+    } catch {
       set({ loading: false });
     }
   },
@@ -90,24 +83,21 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     set((state) => ({ workspaces: [workspace, ...state.workspaces] }));
 
-    supabase
-      .from('workspaces')
-      .insert({
-        id,
-        name,
-        description,
-        color,
-        schema: EMPTY_SCHEMA,
-        created_at: workspace.createdAt,
-      })
-      .then();
+    localDB.insert({
+      id,
+      name,
+      description,
+      color,
+      schema: EMPTY_SCHEMA,
+      created_at: workspace.createdAt,
+    });
 
     return workspace;
   },
 
   removeWorkspace: (id: string) =>
     set((state) => {
-      supabase.from('workspaces').delete().eq('id', id).then();
+      localDB.remove(id);
 
       return {
         workspaces: state.workspaces.filter((workspace) => workspace.id !== id),
@@ -118,11 +108,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   updateWorkspaceSchema: (id: string, schema: Schema) =>
     set((state) => {
-      supabase
-        .from('workspaces')
-        .update({ schema })
-        .eq('id', id)
-        .then();
+      localDB.update(id, { schema });
 
       return {
         workspaces: state.workspaces.map((workspace) =>
