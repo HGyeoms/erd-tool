@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { useSchemaStore } from '../store/schema-store';
 import { useThemeStore } from '../store/theme-store';
@@ -19,9 +20,11 @@ interface ToolbarProps {
   onShare?: () => void;
   onAI?: () => void;
   onLayouts?: () => void;
+  onLint?: () => void;
+  onFindPath?: () => void;
 }
 
-export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onSearch, onShare, onAI, onLayouts }: ToolbarProps) {
+export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onSearch, onShare, onAI, onLayouts, onLint, onFindPath }: ToolbarProps) {
   const addTable = useSchemaStore((s) => s.addTable);
   const addGroup = useSchemaStore((s) => s.addGroup);
   const tables = useSchemaStore((s) => s.tables);
@@ -208,6 +211,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
         }
         label="Undo"
         onClick={handleUndo}
+        shortcut="⌘Z"
       />
 
       <ToolbarButton
@@ -219,6 +223,7 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
         }
         label="Redo"
         onClick={handleRedo}
+        shortcut="⌘⇧Z"
       />
 
       {onSearch && (
@@ -231,8 +236,9 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
             }
-            label="Search (⌘F)"
+            label="Search"
             onClick={onSearch}
+            shortcut="⌘F"
           />
         </>
       )}
@@ -266,6 +272,30 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
               }
               label="Share"
               onClick={onShare}
+            />
+          )}
+          {onFindPath && (
+            <ToolbarButton
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="5" cy="12" r="3" />
+                  <circle cx="19" cy="12" r="3" />
+                  <line x1="8" y1="12" x2="16" y2="12" />
+                </svg>
+              }
+              label="Find Path"
+              onClick={onFindPath}
+            />
+          )}
+          {onLint && (
+            <ToolbarButton
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                </svg>
+              }
+              label="Schema Lint"
+              onClick={onLint}
             />
           )}
           {onAI && (
@@ -313,6 +343,11 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
       {/* Spacer */}
       <div className="flex-1" />
 
+      {/* Auto-save indicator */}
+      <SaveIndicator />
+
+      <div className="w-px h-4 mx-2" style={{ background: 'var(--border-light)' }} />
+
       {/* Table count */}
       <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
         {tables.length} table{tables.length !== 1 ? 's' : ''}
@@ -321,14 +356,49 @@ export function Toolbar({ onImportDDL, onExportDDL, onGoHome, workspaceName, onS
   );
 }
 
+function SaveIndicator() {
+  const tables = useSchemaStore((s) => s.tables);
+  const relationships = useSchemaStore((s) => s.relationships);
+  const [status, setStatus] = useState<'saved' | 'saving'>('saved');
+  const prevRef = useRef({ t: tables.length, r: relationships.length });
+
+  useEffect(() => {
+    const prev = prevRef.current;
+    if (prev.t !== tables.length || prev.r !== relationships.length) {
+      setStatus('saving');
+      const timer = setTimeout(() => setStatus('saved'), 600);
+      prevRef.current = { t: tables.length, r: relationships.length };
+      return () => clearTimeout(timer);
+    }
+  }, [tables.length, relationships.length]);
+
+  return (
+    <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+      {status === 'saving' ? (
+        <>
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+          Saving...
+        </>
+      ) : (
+        <>
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+          Saved
+        </>
+      )}
+    </span>
+  );
+}
+
 function ToolbarButton({
   icon,
   label,
   onClick,
+  shortcut,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
+  shortcut?: string;
 }) {
   return (
     <button
@@ -340,8 +410,9 @@ function ToolbarButton({
     >
       {icon}
       <span className="hidden sm:inline">{label}</span>
-      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none flex items-center gap-1.5" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
         {label}
+        {shortcut && <kbd className="text-[9px] px-1 py-0.5 rounded" style={{ background: 'var(--bg-primary)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>{shortcut}</kbd>}
       </span>
     </button>
   );

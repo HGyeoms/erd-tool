@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useWorkspaceStore } from '../store/workspace-store';
 import { useThemeStore } from '../store/theme-store';
+import { useUserStore } from '../store/user-store';
 import type { Workspace } from '../store/workspace-store';
 
 interface HomeProps {
@@ -16,6 +17,8 @@ export function Home({ onOpenWorkspace }: HomeProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const nickname = useUserStore((s) => s.nickname);
+  const logout = useUserStore((s) => s.logout);
 
   const handleDelete = (id: string) => {
     removeWorkspace(id);
@@ -38,6 +41,24 @@ export function Home({ onOpenWorkspace }: HomeProps) {
             <h1 className="text-lg font-bold tracking-tight sm:text-xl" style={{ color: 'var(--text-primary)' }}>My Databases</h1>
           </div>
           <div className="flex items-center gap-2">
+          {/* User nickname */}
+          <div className="flex items-center gap-2 rounded-xl border px-3 py-1.5" style={{ borderColor: 'var(--border)', background: 'color-mix(in srgb, var(--bg-tertiary, var(--bg-secondary)) 50%, transparent)' }}>
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-[11px] font-bold text-white">
+              {nickname?.charAt(0).toUpperCase()}
+            </div>
+            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{nickname}</span>
+            <button
+              className="ml-1 rounded-lg p-1 text-gray-500 transition-all hover:bg-red-500/10 hover:text-red-400 active:scale-90"
+              onClick={logout}
+              title="Logout"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
+          </div>
           <button
             className="rounded-xl p-2.5 transition-all hover:bg-black/10 active:scale-90"
             style={{ color: 'var(--text-secondary)' }}

@@ -50,6 +50,7 @@ function RelationshipEdgeComponent({
   const [hovered, setHovered] = useState(false);
   const updateRelationship = useSchemaStore((s) => s.updateRelationship);
   const relType = (data as any)?.type || '1:N';
+  const fkLabel = (data as any)?.fkLabel as string | undefined;
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -144,7 +145,7 @@ function RelationshipEdgeComponent({
           width="40"
           height="24"
           rx="6"
-          fill="#1a1d27"
+          fill="var(--bg-tertiary)"
           stroke={hovered || selected ? '#3b82f6' : strokeColor}
           strokeWidth={hovered || selected ? 1.5 : 1}
           opacity={hovered || selected ? 1 : 0.8}
@@ -159,7 +160,18 @@ function RelationshipEdgeComponent({
         >
           {relType}
         </text>
-        {hovered && (
+        {hovered && fkLabel && (
+          <text
+            textAnchor="middle"
+            y="22"
+            fontSize="8"
+            fill="#9ca3af"
+            fontFamily="monospace"
+          >
+            {fkLabel}
+          </text>
+        )}
+        {hovered && !fkLabel && (
           <text
             textAnchor="middle"
             y="20"

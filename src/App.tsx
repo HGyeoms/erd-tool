@@ -1,20 +1,134 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { ReactFlowProvider } from '@xyflow/react';
+import { ReactFlowProvider, useReactFlow } from '@xyflow/react';
 import { Canvas } from './components/Canvas';
 import { Sidebar } from './components/Sidebar';
 import { Toolbar } from './components/Toolbar';
 import { DDLModal } from './components/DDLModal';
 import { SearchBar } from './components/SearchBar';
+import { CommandPalette } from './components/CommandPalette';
 import { ShortcutsPanel } from './components/ShortcutsPanel';
 import { Home } from './components/Home';
+import { LoginScreen } from './components/LoginScreen';
 import { AIPanel } from './components/AIPanel';
 import { LayoutPanel } from './components/LayoutPanel';
+import { LintPanel } from './components/LintPanel';
+import { FindPathPanel } from './components/FindPathPanel';
+import { ToastContainer } from './components/ToastContainer';
 import { useSchemaStore } from './store/schema-store';
 import { useWorkspaceStore } from './store/workspace-store';
+import { useUserStore } from './store/user-store';
 import { encodeSchema, decodeSchema } from './lib/share';
+import { autoLayout } from './lib/auto-layout';
+import type { Table, TableGroup } from './types/schema';
 import './store/theme-store'; // ensure theme is applied on load
 
+const TABLE_COLORS = [
+  '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#f97316',
+];
+const GROUP_COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#06b6d4'];
+
+function CommandPaletteConnector({
+  isOpen,
+  onClose,
+  onSelectTable,
+  onImportDDL,
+  onExportDDL,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectTable: (tableId: string) => void;
+  onImportDDL: () => void;
+  onExportDDL: () => void;
+}) {
+  const { fitView, screenToFlowPosition } = useReactFlow();
+  const addTable = useSchemaStore((s) => s.addTable);
+  const addGroup = useSchemaStore((s) => s.addGroup);
+  const tables = useSchemaStore((s) => s.tables);
+  const groups = useSchemaStore((s) => s.groups) || [];
+  const store = useSchemaStore;
+
+  const handleAddTable = useCallback(() => {
+    const id = `table-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const color = TABLE_COLORS[tables.length % TABLE_COLORS.length];
+    const center = screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    });
+    const table: Table = {
+      id,
+      name: `new_table_${tables.length + 1}`,
+      columns: [
+        {
+          id: `col-${Date.now()}-pk`,
+          name: 'id',
+          type: 'SERIAL',
+          isPrimaryKey: true,
+          isNullable: false,
+          defaultValue: null,
+        },
+      ],
+      position: { x: center.x - 150, y: center.y - 50 },
+      color,
+    };
+    addTable(table);
+  }, [tables.length, screenToFlowPosition, addTable]);
+
+  const handleAddGroup = useCallback(() => {
+    const id = `group-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const color = GROUP_COLORS[groups.length % GROUP_COLORS.length];
+    const center = screenToFlowPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    });
+    const group: TableGroup = {
+      id,
+      name: `Group ${groups.length + 1}`,
+      color,
+      position: { x: center.x - 200, y: center.y - 150 },
+      size: { width: 400, height: 300 },
+    };
+    addGroup(group);
+  }, [groups.length, screenToFlowPosition, addGroup]);
+
+  const handleAutoLayout = useCallback(() => {
+    const state = store.getState();
+    const schema = { tables: state.tables, relationships: state.relationships };
+    const laid = autoLayout(schema);
+    for (const table of laid.tables) {
+      state.updateTablePosition(table.id, table.position);
+    }
+  }, [store]);
+
+  const handleFitView = useCallback(() => {
+    fitView({ padding: 0.2, duration: 400 });
+  }, [fitView]);
+
+  return (
+    <CommandPalette
+      isOpen={isOpen}
+      onClose={onClose}
+      onSelectTable={onSelectTable}
+      onAddTable={handleAddTable}
+      onAddGroup={handleAddGroup}
+      onAutoLayout={handleAutoLayout}
+      onExportDDL={onExportDDL}
+      onImportDDL={onImportDDL}
+      onFitView={handleFitView}
+    />
+  );
+}
+
 function App() {
+  const nickname = useUserStore((s) => s.nickname);
+
+  if (!nickname) {
+    return <LoginScreen />;
+  }
+
+  return <AppMain />;
+}
+
+function AppMain() {
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [modalMode, setModalMode] = useState<'import' | 'export' | null>(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -22,6 +136,10 @@ function App() {
   const [shareToast, setShareToast] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showLayouts, setShowLayouts] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showLint, setShowLint] = useState(false);
+  const [showFindPath, setShowFindPath] = useState(false);
+  const [highlightPath, setHighlightPath] = useState<{ tableIds: string[]; relationshipIds: string[] } | null>(null);
   const currentWorkspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const openWorkspace = useWorkspaceStore((s) => s.openWorkspace);
@@ -146,6 +264,10 @@ function App() {
       const tag = (e.target as HTMLElement).tagName;
       const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette((v) => !v);
+      }
       if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
         e.preventDefault();
         setShowSearch((v) => !v);
@@ -195,6 +317,8 @@ function App() {
           onShare={handleShare}
           onAI={() => setShowAI((v) => !v)}
           onLayouts={() => setShowLayouts(true)}
+          onLint={() => setShowLint((v) => !v)}
+          onFindPath={() => setShowFindPath((v) => !v)}
         />
 
         {/* Main Content */}
@@ -210,6 +334,7 @@ function App() {
             <Canvas
               selectedTableId={selectedTableId}
               onSelectTable={handleSelectTable}
+              highlightPath={highlightPath}
             />
           </div>
 
@@ -238,6 +363,15 @@ function App() {
         {/* AI Panel */}
         {showAI && <AIPanel onClose={() => setShowAI(false)} />}
 
+        {/* Command Palette */}
+        <CommandPaletteConnector
+          isOpen={showCommandPalette}
+          onClose={() => setShowCommandPalette(false)}
+          onSelectTable={(id) => { setSelectedTableId(id); }}
+          onImportDDL={() => setModalMode('import')}
+          onExportDDL={() => setModalMode('export')}
+        />
+
         {/* Layout Panel */}
         {showLayouts && currentWorkspaceId && (
           <LayoutPanel
@@ -245,6 +379,26 @@ function App() {
             onClose={() => setShowLayouts(false)}
           />
         )}
+
+        {/* Find Path Panel */}
+        {showFindPath && (
+          <FindPathPanel
+            onClose={() => { setShowFindPath(false); setHighlightPath(null); }}
+            onHighlightPath={(tableIds, relationshipIds) => setHighlightPath({ tableIds, relationshipIds })}
+            initialTableId={selectedTableId}
+          />
+        )}
+
+        {/* Lint Panel */}
+        {showLint && (
+          <LintPanel
+            onClose={() => setShowLint(false)}
+            onSelectTable={(id) => { setSelectedTableId(id); }}
+          />
+        )}
+
+        {/* Toast Notifications */}
+        <ToastContainer />
 
         {/* Share Toast */}
         {shareToast && (

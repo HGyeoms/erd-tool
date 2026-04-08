@@ -59,7 +59,17 @@ function groupToNode(group: TableGroup): Node {
   };
 }
 
-function relationshipToEdge(rel: Relationship): Edge {
+function relationshipToEdge(rel: Relationship, tables?: Table[]): Edge {
+  let fkLabel: string | undefined;
+  if (tables) {
+    const srcTable = tables.find((t) => t.id === rel.sourceTableId);
+    const tgtTable = tables.find((t) => t.id === rel.targetTableId);
+    const srcCol = srcTable?.columns.find((c) => c.id === rel.sourceColumnId);
+    const tgtCol = tgtTable?.columns.find((c) => c.id === rel.targetColumnId);
+    if (srcCol && tgtCol) {
+      fkLabel = `${srcCol.name} → ${tgtCol.name}`;
+    }
+  }
   return {
     id: rel.id,
     source: rel.sourceTableId,
@@ -67,7 +77,7 @@ function relationshipToEdge(rel: Relationship): Edge {
     sourceHandle: `${rel.sourceColumnId}-source`,
     targetHandle: `${rel.targetColumnId}-target`,
     type: 'relationship',
-    data: { type: rel.type },
+    data: { type: rel.type, fkLabel },
   };
 }
 
@@ -76,9 +86,10 @@ type InteractionMode = 'select' | 'hand';
 interface CanvasProps {
   selectedTableId: string | null;
   onSelectTable: (id: string | null) => void;
+  highlightPath?: { tableIds: string[]; relationshipIds: string[] } | null;
 }
 
-export function Canvas({ onSelectTable }: CanvasProps) {
+export function Canvas({ onSelectTable, highlightPath }: CanvasProps) {
   const tables = useSchemaStore((s) => s.tables);
   const relationships = useSchemaStore((s) => s.relationships);
   const groups = useSchemaStore((s) => s.groups) || [];
@@ -102,6 +113,9 @@ export function Canvas({ onSelectTable }: CanvasProps) {
         setMode('select');
       } else if (e.key === 'h' || e.key === 'H' || e.key === 'ㅗ') {
         setMode('hand');
+      } else if (e.key === 'Escape') {
+        setFocusTableId(null);
+        setHoveredTableId(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -117,16 +131,71 @@ export function Canvas({ onSelectTable }: CanvasProps) {
   );
 
   const [localNodes, setLocalNodes] = useState<Node[]>(storeNodes);
+  const [hoveredTableId, setHoveredTableId] = useState<string | null>(null);
+  const [focusTableId, setFocusTableId] = useState<string | null>(null);
+  const [_isConnecting, setIsConnecting] = useState(false);
 
   // Sync store → local when store changes (e.g. auto-layout, import)
-  useMemo(() => {
+  useEffect(() => {
     setLocalNodes(storeNodes);
   }, [storeNodes]);
 
-  const edges = useMemo(
-    () => relationships.map(relationshipToEdge),
-    [relationships]
-  );
+  // Compute connected table IDs for highlight
+  const connectedTableIds = useMemo(() => {
+    // Path highlight takes priority
+    if (highlightPath) {
+      return new Set<string>(highlightPath.tableIds);
+    }
+    const activeId = hoveredTableId || focusTableId;
+    if (!activeId) return null;
+    const ids = new Set<string>([activeId]);
+    for (const rel of relationships) {
+      if (rel.sourceTableId === activeId) ids.add(rel.targetTableId);
+      if (rel.targetTableId === activeId) ids.add(rel.sourceTableId);
+    }
+    return ids;
+  }, [hoveredTableId, focusTableId, relationships, highlightPath]);
+
+  const connectedEdgeIds = useMemo(() => {
+    if (highlightPath) {
+      return new Set<string>(highlightPath.relationshipIds);
+    }
+    const activeId = hoveredTableId || focusTableId;
+    if (!activeId) return null;
+    const ids = new Set<string>();
+    for (const rel of relationships) {
+      if (rel.sourceTableId === activeId || rel.targetTableId === activeId) {
+        ids.add(rel.id);
+      }
+    }
+    return ids;
+  }, [hoveredTableId, focusTableId, relationships, highlightPath]);
+
+  // Apply highlight opacity to nodes
+  const displayNodes = useMemo(() => {
+    if (!connectedTableIds) {
+      if (focusTableId) return localNodes; // no focus active
+      return localNodes;
+    }
+    return localNodes
+      .filter((n) => !focusTableId || n.type === 'groupNode' || connectedTableIds.has(n.id))
+      .map((n) => {
+        if (n.type === 'groupNode') return n;
+        const isConnected = connectedTableIds.has(n.id);
+        return { ...n, style: { ...n.style, opacity: isConnected ? 1 : 0.25, transition: 'opacity 0.2s ease' } };
+      });
+  }, [localNodes, connectedTableIds, focusTableId]);
+
+  const edges = useMemo(() => {
+    const allEdges = relationships.map((r) => relationshipToEdge(r, tables));
+    if (!connectedEdgeIds) return allEdges;
+    return allEdges
+      .filter((e) => !focusTableId || connectedEdgeIds.has(e.id))
+      .map((e) => {
+        const isConnected = connectedEdgeIds.has(e.id);
+        return { ...e, style: { ...e.style, opacity: isConnected ? 1 : 0.15, transition: 'opacity 0.2s ease' } };
+      });
+  }, [relationships, tables, connectedEdgeIds, focusTableId]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
@@ -189,10 +258,35 @@ export function Canvas({ onSelectTable }: CanvasProps) {
     [removeTable, removeGroup, onSelectTable]
   );
 
+  const onConnectStart = useCallback(() => {
+    setIsConnecting(true);
+    document.querySelectorAll('.react-flow__handle').forEach((el) => {
+      el.classList.add('connecting-valid');
+    });
+  }, []);
+
+  const onConnectEnd = useCallback(() => {
+    setIsConnecting(false);
+    document.querySelectorAll('.react-flow__handle').forEach((el) => {
+      el.classList.remove('connecting-valid');
+    });
+  }, []);
+
+  const onNodeMouseEnter = useCallback((_: React.MouseEvent, node: Node) => {
+    if (!node.id.startsWith('group-')) {
+      setHoveredTableId(node.id);
+    }
+  }, []);
+
+  const onNodeMouseLeave = useCallback(() => {
+    setHoveredTableId(null);
+  }, []);
+
   const onPaneClick = useCallback(() => {
     onSelectTable(null);
     setContextMenu(null);
-  }, [onSelectTable]);
+    if (focusTableId) setFocusTableId(null);
+  }, [onSelectTable, focusTableId]);
 
   const onNodeContextMenu = useCallback(
     (e: React.MouseEvent, node: Node) => {
@@ -229,6 +323,11 @@ export function Canvas({ onSelectTable }: CanvasProps) {
       if (!table) return;
 
       const items: ContextMenuItem[] = [
+        {
+          label: focusTableId === node.id ? 'Exit Focus View' : 'Focus on this table',
+          icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" /></svg>,
+          onClick: () => setFocusTableId(focusTableId === node.id ? null : node.id),
+        },
         {
           label: 'Duplicate Table',
           icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>,
@@ -285,12 +384,16 @@ export function Canvas({ onSelectTable }: CanvasProps) {
   return (
     <div className={`w-full h-full relative ${isHandMode ? 'canvas-hand-mode' : 'canvas-select-mode'}`}>
       <ReactFlow
-        nodes={localNodes}
+        nodes={displayNodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onNodesDelete={onNodesDelete}
         onConnect={onConnect}
         onPaneClick={onPaneClick}
+        onNodeMouseEnter={onNodeMouseEnter}
+        onNodeMouseLeave={onNodeMouseLeave}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onNodeContextMenu={onNodeContextMenu}
         onPaneContextMenu={onPaneContextMenu}
         nodeTypes={nodeTypes}
@@ -357,6 +460,23 @@ export function Canvas({ onSelectTable }: CanvasProps) {
           <span>H</span>
         </button>
       </div>
+
+      {/* Focus view indicator */}
+      {focusTableId && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-lg border px-3 py-2 backdrop-blur-sm shadow-lg" style={{ background: 'color-mix(in srgb, var(--bg-secondary) 90%, transparent)', borderColor: '#3b82f6' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" /></svg>
+          <span className="text-[11px] font-medium text-blue-300">
+            Focus: {tables.find((t) => t.id === focusTableId)?.name || '...'}
+          </span>
+          <button
+            className="text-[11px] text-gray-400 hover:text-white ml-1 transition-colors"
+            onClick={() => setFocusTableId(null)}
+            title="Exit focus view (Esc)"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Context Menu */}
       {contextMenu && (

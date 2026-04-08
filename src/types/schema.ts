@@ -19,6 +19,8 @@ export interface CompositeKey {
   columnIds: string[];
 }
 
+export type TableRole = 'ENTITY' | 'JUNCTION' | 'LOOKUP' | 'AGGREGATE' | 'LOG' | 'CONFIG';
+
 export interface Table {
   id: string;
   name: string;
@@ -27,6 +29,7 @@ export interface Table {
   position: { x: number; y: number };
   color?: string;
   comment?: string;
+  role?: TableRole;
 }
 
 export interface Relationship {

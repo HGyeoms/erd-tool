@@ -1,6 +1,17 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useSchemaStore } from '../store/schema-store';
-import type { Column, EnumType, CompositeKey } from '../types/schema';
+import type { Column, EnumType, CompositeKey, TableRole } from '../types/schema';
+import { inferColumnType } from '../lib/column-inference';
+import { detectFKSuggestions, type FKSuggestion } from '../lib/fk-detector';
+
+const TABLE_ROLES: { value: TableRole; label: string }[] = [
+  { value: 'ENTITY', label: 'Entity' },
+  { value: 'JUNCTION', label: 'Junction' },
+  { value: 'LOOKUP', label: 'Lookup' },
+  { value: 'AGGREGATE', label: 'Aggregate' },
+  { value: 'LOG', label: 'Log' },
+  { value: 'CONFIG', label: 'Config' },
+];
 
 const SQL_TYPES = [
   'INTEGER', 'BIGINT', 'SMALLINT', 'SERIAL', 'BIGSERIAL',
@@ -32,8 +43,18 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
   const updateCompositeKey = useSchemaStore((s) => s.updateCompositeKey);
   const removeCompositeKey = useSchemaStore((s) => s.removeCompositeKey);
 
+  const relationships = useSchemaStore((s) => s.relationships);
+  const addRelationship = useSchemaStore((s) => s.addRelationship);
+
   const selectedTable = tables.find((t) => t.id === selectedTableId) || null;
   const [tableListCollapsed, setTableListCollapsed] = useState(false);
+
+  // Compute FK suggestions for all columns in selected table
+  const fkSuggestions = selectedTable
+    ? selectedTable.columns
+        .map((col) => detectFKSuggestions(tables, relationships, selectedTable.id, col.id))
+        .filter((s): s is FKSuggestion => s !== null)
+    : [];
   const [enumListCollapsed, setEnumListCollapsed] = useState(true);
   const [editingEnumId, setEditingEnumId] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(288); // 72 * 4 = 288px (w-72)
@@ -296,6 +317,24 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
               </div>
             </div>
 
+            {/* Table role */}
+            <div className="mb-3">
+              <label className="block text-[11px] uppercase tracking-wider mb-1" style={{ color: 'var(--text-secondary)' }}>
+                Role
+              </label>
+              <select
+                className="w-full text-xs px-3 py-1.5 rounded-md border focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 outline-none transition-all"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+                value={selectedTable.role || ''}
+                onChange={(e) => updateTable(selectedTable.id, { role: (e.target.value || undefined) as TableRole | undefined })}
+              >
+                <option value="">None</option>
+                {TABLE_ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Column header */}
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
@@ -343,6 +382,51 @@ export function Sidebar({ selectedTableId, onSelectTable }: SidebarProps) {
                 >
                   Add first column
                 </button>
+              </div>
+            )}
+
+            {/* FK Auto-Detection Suggestions */}
+            {fkSuggestions.length > 0 && (
+              <div className="mt-3 space-y-1.5">
+                {fkSuggestions.map((suggestion) => {
+                  const sourceCol = selectedTable.columns.find((c) => c.id === suggestion.sourceColumnId);
+                  return (
+                    <div
+                      key={`${suggestion.sourceColumnId}-${suggestion.targetColumnId}`}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border text-xs"
+                      style={{ background: 'var(--bg-tertiary)', borderColor: 'rgba(6,182,212,0.3)' }}
+                    >
+                      <span className="text-cyan-400 flex-shrink-0">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                        </svg>
+                      </span>
+                      <span className="flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>
+                        <strong style={{ color: 'var(--text-primary)' }}>{sourceCol?.name}</strong>
+                        {' → '}
+                        {suggestion.label}
+                      </span>
+                      <button
+                        className="text-[10px] font-medium px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25 transition-colors"
+                        onClick={() => {
+                          addRelationship({
+                            id: `rel-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                            sourceTableId: suggestion.sourceTableId,
+                            sourceColumnId: suggestion.sourceColumnId,
+                            targetTableId: suggestion.targetTableId,
+                            targetColumnId: suggestion.targetColumnId,
+                            type: 'many-to-one',
+                          });
+                          // Mark source column as FK
+                          updateColumn(suggestion.sourceTableId, suggestion.sourceColumnId, { isForeignKey: true });
+                        }}
+                      >
+                        Link
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -461,7 +545,15 @@ function ColumnEditor({
           className="flex-1 bg-transparent text-xs outline-none border-b border-transparent focus:border-gray-600 transition-colors"
           style={{ color: 'var(--text-primary)' }}
           value={column.name}
-          onChange={(e) => updateColumn(tableId, column.id, { name: e.target.value })}
+          onChange={(e) => {
+            const newName = e.target.value;
+            const inferred = inferColumnType(newName);
+            const updates: Partial<Omit<Column, 'id'>> = { name: newName };
+            if (inferred && column.type === 'VARCHAR(255)') {
+              updates.type = inferred;
+            }
+            updateColumn(tableId, column.id, updates);
+          }}
           placeholder="column_name"
         />
         <button
